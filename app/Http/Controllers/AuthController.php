@@ -34,7 +34,17 @@ class AuthController extends Controller
         $request->session()->regenerate();
         AuditLogger::activity('Signed in', 'Account security');
 
-        return redirect()->intended(route('admin.overview'));
+        $user     = $request->user();
+        $intended = $request->session()->pull('url.intended');
+
+        // Only follow the saved URL if it belongs to this person's own area (admin vs user interface).
+        if ($intended) {
+            $inAdmin = str_starts_with((string) parse_url($intended, PHP_URL_PATH), '/admin');
+
+            if ($inAdmin === $user->isAdmin()) return redirect()->to($intended);
+        }
+
+        return redirect()->route($user->homeRoute());
     }
 
     public function logout(Request $request)

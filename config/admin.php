@@ -4,6 +4,7 @@ return [
     'brand' => env('ADMIN_BRAND', 'folio'),
 
     'roles' => [
+        'citizen' => ['label' => 'Citizen',       'description' => 'Submits and tracks community concerns.'],
         'admin'  => ['label' => 'Administrator', 'description' => 'Reviews the audit trail, checks accounts, and removes accounts.'],
         'member' => ['label' => 'Member',        'description' => 'Works in the workspace with the access you allow.'],
         'viewer' => ['label' => 'Viewer',        'description' => 'Read-only access with the permissions you allow.'],

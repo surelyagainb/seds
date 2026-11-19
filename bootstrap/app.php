@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'permission' => \App\Http\Middleware\EnsurePermission::class,
             'active'     => \App\Http\Middleware\EnsureAccountActive::class,
+            'citizen'    => \App\Http\Middleware\EnsureCitizen::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

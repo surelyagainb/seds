@@ -36,3 +36,21 @@ This is a complete Laravel 13 project: only `vendor/` is missing.
 - Administrator accounts cannot be removed from the UI.
 - Settings (brand name, role labels, permission list, default permissions): `config/admin.php`.
 - "Edit workspace settings" is a permission flag only; there is no workspace settings page yet.
+
+
+## User interface (citizens)
+
+One sign-in page (`/login`) for everyone. After signing in, administrators go to `/admin` and everyone else goes to the user interface. Each side is blocked from the other (admins are redirected away from user pages, non-admins away from `/admin`). New people sign up at `/register`; self-registration always creates a **citizen** (the role cannot be chosen).
+
+| Page | URL |
+|---|---|
+| Submit a concern (step 1) | /concerns/create |
+| Review your concern (step 2) | /concerns/review |
+| Concern received + reference number | /concerns/{reference}/confirmation |
+| Check concern status | /status?ref=VIC-2026-000000 |
+
+- Table: `concerns` (run `php artisan migrate`). Reference numbers look like `VIC-2026-123456`.
+- The form is saved as a draft in the session between steps, so "Edit details" / "Back to edit" keep what was typed. The photo is stored privately in `storage/app/private` (`concern-drafts/` while reviewing, `concerns/` once submitted).
+- People can only look up their own concerns. Submitting a concern is logged under History.
+- Barangays and categories (with their suggestion keywords) are in `config/concerns.php`. Styles: `public/css/user.css`.
+- Analyzed / Matched / Reviewed stay pending until the rule-based matching and staff review are built; the timestamps already exist on `concerns`.

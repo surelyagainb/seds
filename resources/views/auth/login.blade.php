@@ -3,15 +3,15 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Sign in · {{ config('admin.brand') }}</title>
+    <title>Sign in · Victoria</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/admin.css') }}">
 </head>
 <body class="auth-body">
 <div class="auth-card card">
-    <div class="brand">{{ config('admin.brand') }}</div>
+    <div class="brand">Victoria, Oriental Mindoro</div>
     <h2>Sign in</h2>
-    <p class="muted">Use your workspace account.</p>
+    <p class="muted">Use your account. You will be taken to the right place automatically.</p>
 
     @if(session('status'))<div class="flash ok">{{ session('status') }}</div>@endif
 
@@ -29,6 +29,7 @@
         <label class="check"><input type="checkbox" name="remember" value="1"> Keep me signed in</label>
         <button class="btn primary" type="submit">Sign in</button>
     </form>
+    <p class="muted small" style="margin-top:14px">New here? <a class="link" href="{{ route('register') }}">Create an account</a></p>
 </div>
 </body>
 </html>

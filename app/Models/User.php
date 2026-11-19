@@ -25,6 +25,12 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    /** Where this user lands after signing in. */
+    public function homeRoute(): string
+    {
+        return $this->isAdmin() ? 'admin.overview' : 'concerns.create';
+    }
+
     public function roleLabel(): string
     {
         return config("admin.roles.{$this->role}.label", ucfirst($this->role));
