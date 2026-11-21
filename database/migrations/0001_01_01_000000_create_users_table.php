@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Schema;
 // Replaces Laravel's default users migration.
 return new class extends Migration
 {
+    /** Create the tables or columns. */
     public function up(): void
     {
         Schema::create('users', function (Blueprint $t) {
@@ -37,6 +38,7 @@ return new class extends Migration
         });
     }
 
+    /** Undo what up() did (php artisan migrate:rollback). */
     public function down(): void
     {
         Schema::dropIfExists('sessions');

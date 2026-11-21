@@ -7,13 +7,16 @@ use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/** Sign in and sign out for everyone (admins and citizens use the same login form). */
 class AuthController extends Controller
 {
+    /** Show the login page. */
     public function showLogin()
     {
         return view('auth.login');
     }
 
+    /** Check the email and password, sign the person in, then send them to their own area (admin or citizen). */
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -37,7 +40,7 @@ class AuthController extends Controller
         $user     = $request->user();
         $intended = $request->session()->pull('url.intended');
 
-        // Only follow the saved URL if it belongs to this person's own area (admin vs user interface).
+        // Only follow the saved URL if it belongs to this person's own area (admin vs citizen interface).
         if ($intended) {
             $inAdmin = str_starts_with((string) parse_url($intended, PHP_URL_PATH), '/admin');
 
@@ -47,6 +50,7 @@ class AuthController extends Controller
         return redirect()->route($user->homeRoute());
     }
 
+    /** Sign the person out and go back to the login page. */
     public function logout(Request $request)
     {
         AuditLogger::activity('Signed out', 'Account security');

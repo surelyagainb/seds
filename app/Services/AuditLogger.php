@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AuditLog;
 use App\Models\User;
 
+/** Helper for writing audit trail and history entries. */
 class AuditLogger
 {
     /** Security change: password, permissions, roles, deactivation. Shown under "Audit trail". */
@@ -19,6 +20,7 @@ class AuditLogger
         return static::write('history', $event, $detail, $actor);
     }
 
+    /** Save one log row with the person who did it (or "System") and their IP address. */
     protected static function write(string $type, string $event, ?string $detail, ?User $actor): AuditLog
     {
         $actor ??= auth()->user();

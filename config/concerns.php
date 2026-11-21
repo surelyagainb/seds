@@ -1,6 +1,8 @@
 <?php
 
+// Settings for the citizen concern form.
 return [
+    // The barangays shown in the dropdown (also used to check the submitted value)
     'barangays' => [
         'Alcate', 'Babangonan', 'Bagong Buhay', 'Bambanin', 'Bethel', 'Canaan', 'Concepcion', 'Duongan',
         'Leido', 'Loyal', 'Mabini', 'Macatoc', 'Malabo', 'Merit', 'Ordovilla', 'Pakyas', 'Poblacion I',

@@ -1,9 +1,11 @@
+{{-- Audit trail / History page: a list of recent events with two tabs and a CSV download. --}}
 @extends('layouts.admin')
 @section('title', 'Audit trail & history')
 @section('heading', 'Audit trail & history')
 @section('lead', 'A clear record of changes across your workspace.')
 
 @section('content')
+{{-- Tabs: Audit trail (security changes) and History (general activity) --}}
 <div class="tabs page-tabs">
     <a href="{{ route('admin.audit.index', ['tab' => 'audit']) }}" class="{{ $tab === 'audit' ? 'active' : '' }}">Audit trail</a>
     <a href="{{ route('admin.audit.index', ['tab' => 'history']) }}" class="{{ $tab === 'history' ? 'active' : '' }}">History</a>
@@ -23,6 +25,7 @@
         <span class="muted">{{ $logs->total() }} {{ \Illuminate\Support\Str::plural('event', $logs->total()) }}</span>
     </div>
 
+    {{-- One row per event: what happened, who did it, when --}}
     <table class="table">
         <thead><tr><th>Event</th><th>By</th><th>When</th></tr></thead>
         <tbody>
@@ -38,6 +41,7 @@
         </tbody>
     </table>
 
+    {{-- Footer: "Showing x of y" and the Previous / Next page links --}}
     <div class="row-split small muted">
         <span>
             @if($logs->hasPages())

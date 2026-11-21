@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /** Create the tables or columns. */
     public function up(): void
     {
         Schema::create('concerns', function (Blueprint $t) {
@@ -27,6 +28,7 @@ return new class extends Migration
         });
     }
 
+    /** Undo what up() did (php artisan migrate:rollback). */
     public function down(): void
     {
         Schema::dropIfExists('concerns');

@@ -1,9 +1,11 @@
+{{-- Accounts page: lists every account. Admins can only remove accounts here (no role changes). --}}
 @extends('layouts.admin')
 @section('title', 'Accounts')
 @section('heading', 'Accounts')
 @section('lead', 'Check accounts and remove the ones that should no longer have access.')
 
 @section('content')
+{{-- The table of accounts. Admin rows have no Remove button. --}}
 <section class="card">
     <h2>All accounts</h2>
     <table class="table">
@@ -26,6 +28,7 @@
     </table>
 </section>
 
+{{-- One hidden "remove" pop-up per account. The Remove button opens it and asks for the admin's password. --}}
 @foreach($members as $m)
     @unless($m->isAdmin())
     <dialog id="remove-{{ $m->id }}" class="dialog">
@@ -48,6 +51,7 @@
     @endunless
 @endforeach
 
+{{-- If the password was wrong, reopen the same pop-up so the error can be seen --}}
 @if($errors->remove->any() && old('_removing'))
     @push('scripts')<script>document.getElementById('remove-{{ old('_removing') }}')?.showModal();</script>@endpush
 @endif

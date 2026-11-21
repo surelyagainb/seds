@@ -6,8 +6,10 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/** Runs on every protected page. If the account was deactivated, sign it out. */
 class EnsureAccountActive
 {
+    /** Let the request through only if the account is still active. */
     public function handle(Request $request, Closure $next)
     {
         $user = $request->user();

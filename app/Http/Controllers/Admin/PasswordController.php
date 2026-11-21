@@ -8,13 +8,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
 
+/** Lets the signed-in admin change their own password. */
 class PasswordController extends Controller
 {
+    /** Show the change-password form. */
     public function edit(Request $request)
     {
         return view('admin.password', ['user' => $request->user()]);
     }
 
+    /** Check the old password, save the new one, and sign out the other devices. */
     public function update(Request $request)
     {
         $data = $request->validate([

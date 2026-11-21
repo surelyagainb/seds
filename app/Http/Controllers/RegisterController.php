@@ -8,8 +8,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
 
+/** Lets new people sign up. Every new account is a citizen. */
 class RegisterController extends Controller
 {
+    /** Show the register page. */
     public function show()
     {
         return view('auth.register');

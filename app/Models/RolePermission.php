@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/** One permission (like view_audit) switched on or off for one role. */
 class RolePermission extends Model
 {
     protected $fillable = ['role', 'permission', 'allowed'];
@@ -20,6 +21,7 @@ class RolePermission extends Model
             ->all();
     }
 
+    /** Forget the cached permissions (use after changing them). */
     public static function flushCache(): void
     {
         static::$cache = [];

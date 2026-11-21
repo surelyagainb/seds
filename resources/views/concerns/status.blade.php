@@ -1,4 +1,4 @@
-@extends('layouts.user')
+@extends('layouts.citizen')
 @section('title', 'Check Concern Status')
 
 @section('content')

@@ -7,8 +7,10 @@ use App\Models\RolePermission;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
+/** Fills a fresh database with the default permissions and the first admin account. */
 class DatabaseSeeder extends Seeder
 {
+    /** Run with: php artisan db:seed */
     public function run(): void
     {
         foreach (config('admin.defaults') as $role => $perms) {

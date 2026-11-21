@@ -9,9 +9,27 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
+/** Everything a citizen does with concerns: dashboard, submit (2 steps), confirmation, and status tracking. */
 class ConcernController extends Controller
 {
     private const DRAFT = 'concern_draft';
+
+    /** "My Dashboard": counts and the latest submissions for the signed-in citizen. */
+    public function dashboard(Request $request)
+    {
+        $mine = Concern::where('user_id', $request->user()->id);
+
+        $stats = [
+            'total'        => (clone $mine)->count(),
+            'under_review' => (clone $mine)->whereNull('reviewed_at')->whereNull('resolved_at')->count(),
+            'reviewed'     => (clone $mine)->whereNotNull('reviewed_at')->whereNull('resolved_at')->count(),
+            'resolved'     => (clone $mine)->whereNotNull('resolved_at')->count(),
+        ];
+
+        $recent = (clone $mine)->latest('submitted_at')->limit(5)->get();
+
+        return view('concerns.dashboard', compact('stats', 'recent'));
+    }
 
     /** Step 1: the form (restored from the draft when coming back from the review page). */
     public function create()
@@ -129,6 +147,7 @@ class ConcernController extends Controller
         return redirect()->route('concerns.create');
     }
 
+    /** Show the "concern received" page with the reference number. Only the owner can open it. */
     public function confirmation(Request $request, Concern $concern)
     {
         abort_unless($concern->user_id === $request->user()->id, 404);

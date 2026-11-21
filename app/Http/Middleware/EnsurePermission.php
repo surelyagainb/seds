@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 
+/** Protects a route by permission, for example permission:admin. */
 class EnsurePermission
 {
     // Usage: ->middleware('permission:view_audit')  or  ->middleware('permission:admin')
@@ -14,7 +15,7 @@ class EnsurePermission
 
         $ok = $user && ($permission === 'admin' ? $user->isAdmin() : $user->allows($permission));
 
-        // Signed-in users who are not administrators belong in the user interface.
+        // Signed-in users who are not administrators belong in the citizen interface.
         if (! $ok && $user && $permission === 'admin') {
             return redirect()->route($user->homeRoute());
         }

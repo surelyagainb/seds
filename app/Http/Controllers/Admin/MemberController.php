@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 
+/** Admin page for checking and removing accounts. */
 class MemberController extends Controller
 {
     /** Check accounts (read-only: no role changes, no new accounts). */

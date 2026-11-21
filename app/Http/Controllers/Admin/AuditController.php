@@ -7,15 +7,18 @@ use App\Models\AuditLog;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 
+/** Admin page for the audit trail and history, plus the CSV export. */
 class AuditController extends Controller
 {
     private const DAYS = 30;
 
+    /** Which tab is open: "history" or "audit" (default). */
     private function tab(Request $request): string
     {
         return $request->query('tab') === 'history' ? 'history' : 'audit';
     }
 
+    /** The log rows for a tab, newest first, limited to the last 30 days. */
     private function query(string $tab)
     {
         return AuditLog::where('type', $tab)
@@ -23,6 +26,7 @@ class AuditController extends Controller
             ->latest()->latest('id');
     }
 
+    /** Show the log list, 15 rows per page. */
     public function index(Request $request)
     {
         $tab = $this->tab($request);
@@ -31,6 +35,7 @@ class AuditController extends Controller
         return view('admin.audit', ['tab' => $tab, 'logs' => $logs, 'days' => self::DAYS]);
     }
 
+    /** Download the same log as a CSV file (and record that the export happened). */
     public function export(Request $request)
     {
         $tab = $this->tab($request);

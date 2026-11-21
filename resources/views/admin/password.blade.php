@@ -1,3 +1,4 @@
+{{-- Change-password page for the signed-in admin. @method('PUT') makes the form send a PUT request. --}}
 @extends('layouts.admin')
 @section('title', 'Password settings')
 @section('heading', 'Password settings')
@@ -8,6 +9,7 @@
     <h2>Change password</h2>
     <p class="muted small">For {{ $user->email }}</p>
 
+    {{-- The form checks the current password first, then the two new password boxes must match --}}
     <form method="POST" action="{{ route('admin.password.update') }}" class="stack narrow">
         @csrf
         @method('PUT')

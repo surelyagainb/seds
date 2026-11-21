@@ -1,3 +1,4 @@
+{{-- Admin home page: account details, role, and the latest activity. --}}
 @extends('layouts.admin')
 @section('title', 'Administration')
 @section('heading', 'Administration')
@@ -32,7 +33,7 @@
     </div>
 </section>
 
-{{-- Activity --}}
+{{-- Activity: the 2 newest log entries, with tabs to switch between Audit trail and History --}}
 @if($user->isAdmin())
 <section class="card">
     <div class="card-head">

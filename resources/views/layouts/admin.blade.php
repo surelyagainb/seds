@@ -1,3 +1,4 @@
+{{-- Shared frame for every admin page: sidebar menu on the left, page content on the right. --}}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,11 +12,13 @@
     <link rel="stylesheet" href="{{ asset('css/admin.css') }}">
 </head>
 <body>
+{{-- $u = the signed-in admin --}}
 @php($u = auth()->user())
 <div class="shell">
     <aside class="sidebar">
         <a class="brand" href="{{ route('admin.overview') }}">{{ config('admin.brand') }}</a>
 
+        {{-- Sidebar links. The current page's link is highlighted with the "active" class. --}}
         <nav class="nav">
             <a href="{{ route('admin.password.edit') }}" class="nav-link {{ request()->routeIs('admin.password.*') ? 'active' : '' }}">Password settings</a>
             @if($u->isAdmin())
@@ -26,6 +29,7 @@
             @endif
         </nav>
 
+        {{-- Name, role and sign-out button at the bottom of the sidebar --}}
         <div class="whoami">
             <div class="whoami-name">{{ $u->name }}</div>
             <div class="muted small">{{ $u->roleLabel() }}</div>
@@ -41,13 +45,16 @@
         <h1>@yield('heading')</h1>
         <p class="lead">@yield('lead')</p>
 
+        {{-- Green message after an action worked (for example "account removed") --}}
         @if(session('status'))
             <div class="flash ok" role="status">{{ session('status') }}</div>
         @endif
+        {{-- Red message when an account could not be removed --}}
         @if($errors->has('members'))
             <div class="flash err" role="alert">{{ $errors->first('members') }}</div>
         @endif
 
+        {{-- Each page puts its own content here --}}
         @yield('content')
     </main>
 </div>
