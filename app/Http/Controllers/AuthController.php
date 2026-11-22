@@ -40,11 +40,19 @@ class AuthController extends Controller
         $user     = $request->user();
         $intended = $request->session()->pull('url.intended');
 
-        // Only follow the saved URL if it belongs to this person's own area (admin vs citizen interface).
+        // Only follow the saved URL if it belongs to this person's own area (admin, SB member or citizen interface).
         if ($intended) {
-            $inAdmin = str_starts_with((string) parse_url($intended, PHP_URL_PATH), '/admin');
+            $path    = (string) parse_url($intended, PHP_URL_PATH);
+            $inAdmin = str_starts_with($path, '/admin');
+            $inStaff = str_starts_with($path, '/staff');
 
-            if ($inAdmin === $user->isAdmin()) return redirect()->to($intended);
+            $ownArea = match (true) {
+                $user->isAdmin()    => $inAdmin,
+                $user->isSbMember() => $inStaff,
+                default             => ! $inAdmin && ! $inStaff,
+            };
+
+            if ($ownArea) return redirect()->to($intended);
         }
 
         return redirect()->route($user->homeRoute());

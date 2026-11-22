@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
-/** An account. Admins and citizens are both stored here, told apart by the role column. */
+/** An account. Admins, SB members and citizens are all stored here, told apart by the role column. */
 class User extends Authenticatable
 {
     protected $fillable = ['name', 'email', 'password', 'is_active', 'password_changed_at'];
@@ -28,10 +28,19 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
-    /** Where this account lands after signing in. */
+    /** True if this account is a Sangguniang Bayan (SB) member. */
+    public function isSbMember(): bool
+    {
+        return $this->role === 'sb_member';
+    }
+
+    /** Where this account lands after signing in: admin area, SB member (staff) area, or citizen dashboard. */
     public function homeRoute(): string
     {
-        return $this->isAdmin() ? 'admin.overview' : 'citizen.dashboard';
+        if ($this->isAdmin())    return 'admin.overview';
+        if ($this->isSbMember()) return 'staff.dashboard';
+
+        return 'citizen.dashboard';
     }
 
     /** The role as readable text, like "Citizen". */

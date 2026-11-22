@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Concern;
 use App\Services\AuditLogger;
+use App\Services\OrdinanceMatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -26,9 +27,13 @@ class ConcernController extends Controller
             'resolved'     => (clone $mine)->whereNotNull('resolved_at')->count(),
         ];
 
-        $recent = (clone $mine)->latest('submitted_at')->limit(5)->get();
+        // Search and filters from the page address (?q=...&category=...&status=...&barangay=...)
+        $filters  = $request->only(['q', 'category', 'status', 'barangay']);
+        $filtered = collect($filters)->filter(fn ($v) => trim((string) $v) !== '')->isNotEmpty();
 
-        return view('concerns.dashboard', compact('stats', 'recent'));
+        $recent = (clone $mine)->filter($filters)->latest('submitted_at')->paginate(10)->withQueryString();
+
+        return view('concerns.dashboard', compact('stats', 'recent', 'filters', 'filtered'));
     }
 
     /** Step 1: the form (restored from the draft when coming back from the review page). */
@@ -131,6 +136,13 @@ class ConcernController extends Controller
         session()->forget(self::DRAFT);
 
         AuditLogger::activity('Concern submitted', $concern->reference);
+
+        // Analyze the concern and look for ordinances right away. If this fails, the concern is still saved.
+        try {
+            app(OrdinanceMatcher::class)->matchAndSave($concern);
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return redirect()->route('concerns.confirmation', $concern);
     }

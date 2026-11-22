@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \App\Http\Middleware\EnsurePermission::class,
             'active'     => \App\Http\Middleware\EnsureAccountActive::class,
             'citizen'    => \App\Http\Middleware\EnsureCitizen::class,
+            'sb'         => \App\Http\Middleware\EnsureSbMember::class,
         ]);
     })
     // Custom error handling would go here (none needed yet)

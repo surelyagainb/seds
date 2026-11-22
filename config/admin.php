@@ -8,6 +8,7 @@ return [
     // The roles an account can have. The label is the text shown on screen.
     // Citizen and Administrator are the ones in use; Member and Viewer are left over from the first design.
     'roles' => [
+        'sb_member' => ['label' => 'SB Member', 'description' => 'Sangguniang Bayan staff who review concerns and ordinance matches.'],
         'citizen' => ['label' => 'Citizen',       'description' => 'Submits and tracks community concerns.'],
         'admin'  => ['label' => 'Administrator', 'description' => 'Reviews the audit trail, checks accounts, and removes accounts.'],
         'member' => ['label' => 'Member',        'description' => 'Works in the workspace with the access you allow.'],

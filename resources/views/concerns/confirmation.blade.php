@@ -12,13 +12,24 @@
     <div><div class="ref-label">Your reference number</div><div class="ref-num">{{ $concern->reference }}</div></div>
   </div>
   <span class="stamp">Received • {{ $concern->submitted_at->format('j M Y, h:i A') }}</span>
+  @php
+      // Steps up to the latest completed stage are shown as done (green)
+      $last  = $concern->lastStage();
+      $steps = [['Received', $concern->submitted_at], ['Analyzed', $concern->analyzed_at], ['Matched', $concern->matched_at], ['Reviewed', $concern->reviewed_at]];
+  @endphp
   <div class="steps">
-    <div class="step active"><b>● Received →</b><small>Active • Received {{ $concern->submitted_at->isToday() ? 'today' : $concern->submitted_at->format('j M Y') }}</small></div>
-    <div class="step"><b>○ Analyzed →</b><small>Pending</small></div>
-    <div class="step"><b>○ Matched →</b><small>Pending</small></div>
-    <div class="step"><b>○ Reviewed</b><small>Pending</small></div>
+    @foreach($steps as $i => [$name, $at])
+      <div class="step {{ $i <= $last ? 'active' : '' }}"><b>{{ $i <= $last ? '●' : '○' }} {{ $name }}{{ $i < 3 ? ' →' : '' }}</b>
+        <small>{{ $i <= $last ? ($i === $last ? 'Active • ' : 'Done • ') . $at->format('j M, h:i A') : 'Pending' }}</small></div>
+    @endforeach
   </div>
-  <p class="hint" style="margin-top:12px">Received means your report is safely recorded. Analysis, matching and staff review have not started yet.</p>
+  <p class="hint" style="margin-top:12px">
+    @if($last === 0)
+      Received means your report is safely recorded. Analysis, matching and staff review have not started yet.
+    @else
+      Your report is recorded and was checked against the ordinances on file. A match is only a suggestion: municipal staff still review it.
+    @endif
+  </p>
 </section>
 
 <div class="two">

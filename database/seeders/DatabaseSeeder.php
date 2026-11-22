@@ -29,6 +29,9 @@ class DatabaseSeeder extends Seeder
             'password_changed_at' => now(),
         ])->save();
 
+        // A few demo ordinances so the matcher has something to suggest
+        $this->call(DemoOrdinanceSeeder::class);
+
         AuditLog::create([
             'actor_id' => $admin->id, 'actor_name' => $admin->name, 'type' => 'audit',
             'event' => 'Role assigned', 'detail' => 'Administrator access',

@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\PasswordController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ConcernController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\Staff;
 use Illuminate\Support\Facades\Route;
 
 // Home page (/): signed-in people go to their own area (admin or citizen), everyone else goes to the login page.
@@ -45,6 +46,35 @@ Route::middleware(['auth', 'auth.session', 'active', 'citizen'])->group(function
     Route::get('concerns/{concern}/confirmation', [ConcernController::class, 'confirmation'])->name('concerns.confirmation');
     // Track a concern by its reference number
     Route::get('status', [ConcernController::class, 'status'])->name('concerns.status');
+});
+
+// SB member (staff) interface: review concerns and ordinance matches, manage ordinances, see recurring issues.
+// Middleware: sb = only SB members can open anything under /staff.
+Route::prefix('staff')->name('staff.')->middleware(['auth', 'auth.session', 'active', 'sb'])->group(function () {
+    // Community overview (map, chart, counts per barangay)
+    Route::get('/', Staff\DashboardController::class)->name('dashboard');
+
+    // Concerns: list, one concern, and the decisions staff can make
+    Route::get('concerns', [Staff\ConcernController::class, 'index'])->name('concerns.index');
+    Route::get('concerns/{concern}', [Staff\ConcernController::class, 'show'])->name('concerns.show');
+    Route::post('concerns/{concern}/decision', [Staff\ConcernController::class, 'decide'])->name('concerns.decide');
+    Route::post('concerns/{concern}/reassign', [Staff\ConcernController::class, 'reassign'])->name('concerns.reassign');
+    Route::post('concerns/{concern}/link', [Staff\ConcernController::class, 'link'])->name('concerns.link');
+    Route::post('concerns/{concern}/unmatched', [Staff\ConcernController::class, 'unmatched'])->name('concerns.unmatched');
+    Route::post('concerns/{concern}/suggest-new', [Staff\ConcernController::class, 'suggestNew'])->name('concerns.suggest');
+
+    // Recurring issues
+    Route::get('recurring', [Staff\RecurringController::class, 'index'])->name('recurring');
+    Route::post('recurring/flag', [Staff\RecurringController::class, 'flag'])->name('recurring.flag');
+
+    // Ordinance register
+    Route::get('ordinances', [Staff\OrdinanceController::class, 'index'])->name('ordinances.index');
+    Route::post('ordinances', [Staff\OrdinanceController::class, 'store'])->name('ordinances.store');
+    Route::get('ordinances/{ordinance}', [Staff\OrdinanceController::class, 'show'])->name('ordinances.show');
+
+    // Barangay directory
+    Route::get('barangays', [Staff\BarangayController::class, 'index'])->name('barangays.index');
+    Route::get('barangays/{barangay}', [Staff\BarangayController::class, 'show'])->name('barangays.show');
 });
 
 // The admin area is for administrators only. Admins can view the audit log,
