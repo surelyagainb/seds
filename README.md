@@ -47,14 +47,16 @@ You need PHP 8.3+, Composer, and MySQL (Laragon has all three).
 | Who | How to get an account | Where you land after login |
 |---|---|---|
 | **Citizen** | Click "Create an account" on the login page (`/register`) | My Dashboard (`/dashboard`) |
-| **SB member** | Created with a command (see below). There is no sign-up page for staff | Staff area (`/staff`) |
+| **SB member** | 5 **temporary** sample accounts are created by the seeder (`johnsmith123@gmail.com`, `mariasantos123@gmail.com`, `juandelacruz123@gmail.com`, `anareyes123@gmail.com`, `pedrogarcia123@gmail.com`), all with the password `sbmember`. There is no sign-up page for staff | Staff area (`/staff`) |
 | **Administrator** | Created by the seeder: `admin@victoria.test` / `admin` | Admin area (`/admin`) |
 
 - Change the admin password right away (Admin > Password settings). `admin` is only a starting password.
 - Each side is closed to the others. If you open a page that belongs to another side, you are sent back to your own home page.
 - Nobody picks their own role. Everyone who registers is a citizen.
 
-**Creating an SB member account** (run in the terminal, it asks for the password):
+**The 5 sample SB accounts are only for trying things out.** Remove them before real use (Admin > Accounts > Remove, or delete the block marked TEMPORARY in `database/seeders/DatabaseSeeder.php`). Running `php artisan db:seed` again will not reset a password you changed, but it will re-create a sample account you removed.
+
+**Creating a real SB member account** (run in the terminal, it asks for the password):
 ```
 php artisan sb:create "Juan Dela Cruz" juan@example.com
 ```
