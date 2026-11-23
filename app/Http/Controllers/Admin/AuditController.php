@@ -30,9 +30,22 @@ class AuditController extends Controller
     public function index(Request $request)
     {
         $tab = $this->tab($request);
-        $logs = $this->query($tab)->paginate(15)->withQueryString();
+        $q = trim((string) $request->query('q'));
+        $user = trim((string) $request->query('user'));
+        $logs = $this->query($tab)
+            ->when($q !== '', fn ($query) => $query->where(function ($where) use ($q) {
+                $like = '%'.$q.'%';
+                $where->where('event','like',$like)->orWhere('detail','like',$like)->orWhere('actor_name','like',$like);
+            }))
+            ->when($user !== '', fn ($query) => $query->where('actor_name','like','%'.$user.'%'))
+            ->paginate(15)->withQueryString();
 
-        return view('admin.audit', ['tab' => $tab, 'logs' => $logs, 'days' => self::DAYS]);
+        return view('admin.audit', [
+            'tab' => $tab,
+            'logs' => $logs,
+            'days' => self::DAYS,
+            'filters' => ['q'=>$q,'user'=>$user],
+        ]);
     }
 
     /** Download the same log as a CSV file (and record that the export happened). */
@@ -42,7 +55,15 @@ class AuditController extends Controller
 
         AuditLogger::activity('Audit log exported', ucfirst($tab === 'audit' ? 'audit trail' : 'history'));
 
-        $rows = $this->query($tab)->get();
+        $q = trim((string) $request->query('q'));
+        $user = trim((string) $request->query('user'));
+        $rows = $this->query($tab)
+            ->when($q !== '', fn ($query) => $query->where(function ($where) use ($q) {
+                $like='%'.$q.'%';
+                $where->where('event','like',$like)->orWhere('detail','like',$like)->orWhere('actor_name','like',$like);
+            }))
+            ->when($user !== '', fn ($query) => $query->where('actor_name','like','%'.$user.'%'))
+            ->get();
         $filename = ($tab === 'audit' ? 'audit-trail' : 'history').'-'.now()->format('Y-m-d').'.csv';
 
         return response()->streamDownload(function () use ($rows) {

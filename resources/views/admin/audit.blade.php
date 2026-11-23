@@ -17,26 +17,35 @@
             <h2>{{ $tab === 'audit' ? 'Recent activity' : 'Workspace history' }}</h2>
             <p class="muted small">{{ $tab === 'audit' ? 'Account security and permission changes.' : 'Sign-ins, exports and other general activity.' }}</p>
         </div>
-        <a class="btn" href="{{ route('admin.audit.export', ['tab' => $tab]) }}">Export CSV</a>
+        <a class="btn" href="{{ route('admin.audit.export', ['tab' => $tab, 'q' => $filters['q'], 'user' => $filters['user']]) }}">Export CSV</a>
     </div>
 
     <div class="row-split small">
         <span>Last {{ $days }} days</span>
         <span class="muted">{{ $logs->total() }} {{ \Illuminate\Support\Str::plural('event', $logs->total()) }}</span>
     </div>
+    <form class="row-split mt" method="GET">
+        <input type="hidden" name="tab" value="{{ $tab }}">
+        <input type="search" name="q" value="{{ $filters['q'] }}" placeholder="Search event or detail" aria-label="Search audit log">
+        <input type="search" name="user" value="{{ $filters['user'] }}" placeholder="Filter by user" aria-label="Filter by user">
+        <button type="submit" class="btn">Filter</button>
+        <a class="btn" href="{{ route('admin.audit.index',['tab'=>$tab]) }}">Reset</a>
+    </form>
 
     {{-- One row per event: what happened, who did it, when --}}
-    <table class="table">
-        <thead><tr><th>Event</th><th>By</th><th>When</th></tr></thead>
+    <table class="table responsive-table" data-sortable>
+        <caption>{{ $tab === 'audit' ? 'Audit trail events' : 'Workspace history events' }}</caption>
+        <thead><tr><th scope="col" data-sort-type="text">Event</th><th scope="col" data-sort-type="text">User</th><th scope="col" data-sort-type="text">Target</th><th scope="col" data-sort-type="date">Time</th></tr></thead>
         <tbody>
         @forelse($logs as $log)
             <tr>
-                <td><div class="value-sm">{{ $log->event }}</div><div class="muted small">{{ $log->detail }}</div></td>
-                <td>{{ $log->actor_name }}</td>
-                <td class="muted">{{ $log->when_label }}</td>
+                <td data-label="Event"><div class="value-sm">{{ $log->event }}</div><div class="muted small">{{ $log->detail }}</div></td>
+                <td data-label="User">{{ $log->actor_name }}</td>
+                <td data-label="Target">{{ $log->detail ?: '—' }}</td>
+                <td data-label="Time" data-sort="{{ $log->created_at->toIso8601String() }}" class="muted">{{ $log->when_label }}</td>
             </tr>
         @empty
-            <tr><td colspan="3" class="muted empty">No events in the last {{ $days }} days.</td></tr>
+            <tr><td colspan="4" class="muted empty">No events in the last {{ $days }} days.</td></tr>
         @endforelse
         </tbody>
     </table>

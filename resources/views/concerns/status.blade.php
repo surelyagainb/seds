@@ -65,6 +65,10 @@
       @endforeach
     </div>
     <div class="status-box"><b>{{ $summary[0] }}</b><p>{{ $summary[1] }}</p></div>
+    @if($concern->reports_count>1)<div class="notice" role="status">{{ $concern->reports_count }} residents also reported this concern.</div>@endif
+    @if($concern->decision==='rejected')
+      <div class="warn" role="alert"><b>Concern rejected</b>{{ $concern->rejection_reason ?: 'A reason was not provided.' }}</div>
+    @endif
     <div class="legal"><b>An ordinance match is not a final legal decision.</b> It is a suggestion, not legal advice or a promise of resolution. Authorized municipal staff review the match before any next step.</div>
     <div class="updated">Last updated: {{ $fmt($stages[$last]['at']) }}</div>
   </section>

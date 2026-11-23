@@ -5,6 +5,8 @@
 @php $cats = config('concerns.categories'); @endphp
 <h1>My Dashboard</h1>
 <p class="lead">A quick look at the concerns you have submitted.</p>
+<details class="card"><summary><b>What happens next</b></summary><p class="sub">Submit a concern, receive a reference number, wait for analysis and ordinance matching, then municipal staff review the result.</p></details>
+<section class="card"><b>{{ number_format($photoUsedMb,1) }} MB of 20 MB used</b><div class="password-meter" style="margin-top:8px"><span style="width:{{ min(100,$photoUsedMb/20*100) }}%;background:{{ $photoUsedMb>=16?'#b42318':($photoUsedMb>=12?'#8a5a00':'#1f7a3d') }}"></span></div></section>
 
 <div class="stats">
   <div class="card stat"><div class="num">{{ $stats['total'] }}</div><div class="lbl">My Concerns</div></div>
@@ -50,18 +52,27 @@
   @else
     @if($filtered)<div class="hint" style="margin:10px 0 0">{{ $recent->total() }} {{ \Illuminate\Support\Str::plural('concern', $recent->total()) }} found</div>@endif
     <div class="table-wrap">
-      <table class="dtable">
-        <thead><tr><th>Reference</th><th>Category</th><th>Status</th></tr></thead>
+      <table class="dtable responsive-table" data-sortable>
+        <caption>My concerns</caption>
+        <thead><tr><th scope="col" data-sort-type="text">Reference</th><th scope="col" data-sort-type="text">Category</th><th scope="col" data-sort-type="text">Status</th><th scope="col">Photo</th></tr></thead>
         <tbody>
         @foreach($recent as $c)
           <tr>
-            <td><a class="ref-link" href="{{ route('concerns.status', ['ref' => $c->reference]) }}">{{ $c->reference }}</a></td>
-            <td>
+            <td data-label="Reference"><a class="ref-link" href="{{ route('concerns.status', ['ref' => $c->reference]) }}">{{ $c->reference }}</a></td>
+            <td data-label="Category">
               <div class="chips">
                 @foreach($c->categoryKeys() as $k)<span class="chip {{ $cats[$k]['cls'] }}">{{ $cats[$k]['label'] }}</span>@endforeach
               </div>
             </td>
-            <td><span class="badge {{ $c->statusClass() }}">{{ $c->statusLabel() }}</span></td>
+            <td data-label="Status"><span class="badge {{ $c->statusClass() }}">{{ $c->statusLabel() }}</span>
+              @if($c->decision==='rejected')<div class="hint">Reason: {{ $c->rejection_reason ?: 'Not provided' }}</div>@endif
+            </td>
+            <td data-label="Photo">
+              @if($c->photo_path)
+                <form method="POST" action="{{ route('concerns.delete-photo',$c) }}">@csrf @method('DELETE')<button type="submit" class="btn" data-no-loading>Delete photo</button></form>
+              @else <span class="muted">No photo</span>
+              @endif
+            </td>
           </tr>
         @endforeach
         </tbody>

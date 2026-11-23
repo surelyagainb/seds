@@ -5,56 +5,58 @@ namespace Database\Seeders;
 use App\Models\AuditLog;
 use App\Models\RolePermission;
 use App\Models\User;
+use App\Models\ConcernCategory;
 use Illuminate\Database\Seeder;
 
-/** Fills a fresh database with the default permissions, the first admin account, and TEMPORARY sample SB members (5). */
+/** Fills a fresh database with the default permissions, the first admin account, and TEMPORARY sample SB members (5) & citizens (5). */
 class DatabaseSeeder extends Seeder
 {
     /** Run with: php artisan db:seed */
     public function run(): void
     {
+        foreach ([
+            ['key'=>'litter','name'=>'Improper Garbage Disposal & Littering','color'=>'#1f6b45','keywords_en'=>['garbage','trash','waste','litter','throw'],'keywords_fil'=>['basura','kalat']],
+            ['key'=>'dumping','name'=>'Illegal Dumping','color'=>'#1f6b45','keywords_en'=>['dump','trash','waste'],'keywords_fil'=>['tambak','itapon','basura']],
+            ['key'=>'collection','name'=>'Uncollected Garbage & Waste Collection','color'=>'#1f6b45','keywords_en'=>['collection','garbage','trash'],'keywords_fil'=>['kolekta','hindi kinuha','basura']],
+            ['key'=>'flood','name'=>'Drainage & Flooding','color'=>'#2a5a8c','keywords_en'=>['flood','drain','clog','canal'],'keywords_fil'=>['baha','kanal','baradong','sambak']],
+            ['key'=>'health','name'=>'Sanitation & Public Hygiene','color'=>'#a1274b','keywords_en'=>['sanitation','dengue','mosquito','sewage'],'keywords_fil'=>['lamok','malinis','dengue']],
+            ['key'=>'road','name'=>'Road or Street Damage','color'=>'#8a5a00','keywords_en'=>['road','pothole','street'],'keywords_fil'=>['lubak','sirang kalsada','daan']],
+            ['key'=>'fire','name'=>'Open or Dangerous Burning','color'=>'#8a5a00','keywords_en'=>['burning','fire','trash'],'keywords_fil'=>['sunog','nasusunog']],
+            ['key'=>'other','name'=>'Others','color'=>'#4b3f8f','keywords_en'=>[],'keywords_fil'=>[]],
+        ] as $category) {
+            ConcernCategory::updateOrCreate(['key'=>$category['key']], $category);
+        }
         foreach (config('admin.defaults') as $role => $perms) {
             foreach ($perms as $permission => $allowed) {
                 RolePermission::updateOrCreate(['role' => $role, 'permission' => $permission], ['allowed' => $allowed]);
             }
         }
 
-        // First administrator. Sign in, then change this password right away.
-        $admin = User::firstOrNew(['email' => 'admin@victoria.test']);
-        $admin->forceFill([
-            'name'                => 'Alex Morgan',
-            'password'            => 'admin',
-            'role'                => 'admin',
-            'is_active'           => true,
-            'password_changed_at' => now(),
-        ])->save();
+        // First administrator. Use an email inbox that can receive login codes.
+        $admin = User::where('role', 'admin')->orderBy('id')->first();
 
-        // TEMPORARY sample SB members, so the staff pages can be tried right away.
-        // All use the password "sbmember". Delete these accounts (Admin > Accounts) or remove this block before real use.
-        // An existing sample account keeps its password, so a changed password is not reset by running the seeder again.
-        // (Dummy addresses: nothing is ever emailed to them.)
-        $samples = [
-            ['John Smith',       'johnsmith123@gmail.com'],
-            ['Maria Santos',     'mariasantos123@gmail.com'],
-            ['Juan Dela Cruz',   'juandelacruz123@gmail.com'],
-            ['Ana Reyes',        'anareyes123@gmail.com'],
-            ['Pedro Garcia',     'pedrogarcia123@gmail.com'],
-        ];
-
-        // Remove the first sample accounts (sb1/sb2/sb3) if an earlier seed created them
-        User::whereIn('email', ['sb1@victoria.test', 'sb2@victoria.test', 'sb3@victoria.test'])->where('role', 'sb_member')->delete();
-
-        foreach ($samples as [$name, $email]) {
-            $sb = User::firstOrNew(['email' => $email]);
-            $isNew = ! $sb->exists;
-
-            $sb->forceFill(['name' => $name, 'role' => 'sb_member', 'is_active' => true]);
-            if ($isNew) {
-                $sb->password = 'sbmember';
-                $sb->password_changed_at = now();
-            }
-            $sb->save();
+        if (! $admin) {
+            $admin = new User();
+            $admin->forceFill([
+                'name'                => 'Alex Morgan',
+                'username'            => 'admin',
+                'email'               => env('ADMIN_EMAIL', 'admin@victoria.test'),
+                'password'            => 'admin',
+                'role'                => 'admin',
+                'is_active'           => true,
+                'status'              => 'active',
+                'verified_at'         => now(),
+                'password_changed_at' => now(),
+            ])->save();
+        } else {
+            $admin->forceFill([
+                'username' => $admin->username ?: 'admin',
+                'email' => env('ADMIN_EMAIL', $admin->email ?: 'admin@victoria.test'),
+                'verified_at' => $admin->verified_at ?: now(),
+            ])->save();
         }
+
+        // SB members and citizens are created by registration or through the admin account form.
 
         // A few demo ordinances so the matcher has something to suggest
         $this->call(DemoOrdinanceSeeder::class);

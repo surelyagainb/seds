@@ -26,7 +26,7 @@ You need PHP 8.3+, Composer, and MySQL (Laragon has all three).
    ```
    (On Mac/Linux, use `cp` instead of `copy`.)
 3. Create an empty MySQL database named `victoria_db`.
-   Then open `.env` and check the `DB_USERNAME` and `DB_PASSWORD` lines match your MySQL.
+   Then open `.env` and check the `DB_USERNAME` and `DB_PASSWORD` lines match your MySQL. Set your Gmail SMTP values and `ADMIN_EMAIL` as explained in section 2 before continuing.
 4. Create the tables and the first admin account:
    ```
    php artisan migrate:fresh --seed
@@ -42,19 +42,44 @@ You need PHP 8.3+, Composer, and MySQL (Laragon has all three).
 
 ---
 
-## 2. Logging in
+## 2. Email verification (Gmail OTP)
+
+Registration and login both use a six-digit code sent by email. A new citizen account stays pending until its email code is verified. After registration, users sign in with their username, email, or mobile number and password, then enter the code sent to the email address on their account.
+
+Every account that can sign in needs an email address. Mobile numbers remain optional contact information. The code expires after 5 minutes, can be used once, and allows up to 5 incorrect attempts. A new code can be requested after 60 seconds.
+
+Before running `php artisan migrate:fresh --seed`, set `ADMIN_EMAIL` in `.env` to an inbox you can open. The seeded administrator uses that email address and needs it to receive login codes. The starter password is still `admin`; change it after the first sign in. If the database was already seeded, update the administrator's email through Admin > Accounts or set `ADMIN_EMAIL` and run `php artisan db:seed`; this updates the email without resetting an existing administrator password.
+
+To use Gmail, open `.env` and set the mail values below. Use a Google **App Password**, not your normal Gmail password. Turn on 2-Step Verification in the Google account before creating an App Password.
+
+```env
+MAIL_MAILER=smtp
+MAIL_SCHEME=null
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-gmail@gmail.com
+MAIL_PASSWORD=your-16-character-app-password
+MAIL_FROM_ADDRESS=your-gmail@gmail.com
+MAIL_FROM_NAME="Victoria Admin"
+```
+
+`MAIL_USERNAME` and `MAIL_FROM_ADDRESS` should be the Gmail account used by the system to send verification codes. Users can receive the code at their own email address; they do not need to use Gmail. Keep `.env` private and do not upload it to GitHub. After changing mail settings, run `php artisan config:clear` if Laravel configuration was cached.
+
+The `email_otps` table stores only a hash of each code. Run the new migration with `php artisan migrate` after updating an existing database.
+
+---
+
+## 3. Logging in
 
 | Who | How to get an account | Where you land after login |
 |---|---|---|
-| **Citizen** | Click "Create an account" on the login page (`/register`) | My Dashboard (`/dashboard`) |
-| **SB member** | 5 **temporary** sample accounts are created by the seeder (`johnsmith123@gmail.com`, `mariasantos123@gmail.com`, `juandelacruz123@gmail.com`, `anareyes123@gmail.com`, `pedrogarcia123@gmail.com`), all with the password `sbmember`. There is no sign-up page for staff | Staff area (`/staff`) |
-| **Administrator** | Created by the seeder: `admin@victoria.test` / `admin` | Admin area (`/admin`) |
+| **Citizen** | Click   "Create an account" on the login page (`/register`) | My Dashboard (`/dashboard`) |
+| **SB member** | Created by an administrator or with the `php artisan sb:create` command. Their first sign-in requires an email code | Staff area (`/staff`) |
+| **Administrator** | Created by the seeder using the `ADMIN_EMAIL` value in `.env`; starter password: `admin` | Admin area (`/admin`) |
 
 - Change the admin password right away (Admin > Password settings). `admin` is only a starting password.
 - Each side is closed to the others. If you open a page that belongs to another side, you are sent back to your own home page.
 - Nobody picks their own role. Everyone who registers is a citizen.
-
-**The 5 sample SB accounts are only for trying things out.** Remove them before real use (Admin > Accounts > Remove, or delete the block marked TEMPORARY in `database/seeders/DatabaseSeeder.php`). Running `php artisan db:seed` again will not reset a password you changed, but it will re-create a sample account you removed.
 
 **Creating a real SB member account** (run in the terminal, it asks for the password):
 ```
@@ -64,7 +89,7 @@ The password needs 12+ characters with letters, numbers and a symbol. Later, SB 
 
 ---
 
-## 3. What citizens can do
+## 4. What citizens can do
 
 | Page | URL | What it does |
 |---|---|---|
@@ -87,7 +112,7 @@ Good to know:
 
 ---
 
-## 4. What SB members can do
+## 5. What SB members can do
 
 Sign in at `/login`. You land on the **Community overview**.
 
@@ -122,7 +147,7 @@ Sign in at `/login`. You land on the **Community overview**.
 
 ---
 
-## 5. What administrators can do
+## 6. What administrators can do
 
 | Page | URL | What it does |
 |---|---|---|
@@ -144,7 +169,7 @@ The two log tabs:
 
 ---
 
-## 6. Rule-based matching
+## 7. Rule-based matching
 
 This is the "brain" that suggests which ordinances fit a concern. It uses simple rules (no AI), so you can always explain *why* an ordinance was suggested. The SB member pages show these suggestions.
 
@@ -182,7 +207,7 @@ This is the "brain" that suggests which ordinances fit a concern. It uses simple
 
 ---
 
-## 7. Where things are (folder map)
+## 8. Where things are (folder map)
 
 | Folder / file | What is inside |
 |---|---|
@@ -209,7 +234,7 @@ Every controller, model, and middleware has a short comment above each function 
 
 ---
 
-## 8. Not built yet
+## 9. Not built yet
 
 - Editing or deleting an ordinance (you can add and view them)
 - A sign-up / approval flow for SB members, and the office-request flow for giving roles

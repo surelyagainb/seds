@@ -4,13 +4,33 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-/** A concern a citizen submitted, with its reference number and review progress. */
+/** A concern a citizen submitted, with its reference number and review progress.
+ *
+ * @property int $id
+ * @property string $reference
+ * @property int $user_id
+ * @property string $barangay
+ * @property string $description
+ * @property string|null $location
+ * @property array|null $categories
+ * @property string|null $decision
+ * @property int|null $matched_ordinance_id
+ * @property string|null $rejection_reason
+ * @property \Illuminate\Support\Carbon|null $submitted_at
+ * @property \Illuminate\Support\Carbon|null $analyzed_at
+ * @property \Illuminate\Support\Carbon|null $matched_at
+ * @property \Illuminate\Support\Carbon|null $reviewed_at
+ * @property \Illuminate\Support\Carbon|null $resolved_at
+ * @property \Illuminate\Support\Carbon|null $viewed_at
+ */
 class Concern extends Model
 {
     protected $fillable = [
         'reference', 'user_id', 'barangay', 'description', 'location', 'categories',
         'photo_path', 'photo_name', 'submitted_at', 'analyzed_at', 'matched_at', 'reviewed_at', 'resolved_at',
         'decision', 'matched_ordinance_id', 'reviewed_by', 'viewed_at', 'assigned_to', 'suggest_new',
+        'latitude', 'longitude', 'reports_count', 'canonical_concern_id', 'rejection_reason', 'photo_size',
+        'reminder_snoozed_at', 'match_confirmed_at',
     ];
 
     /** How columns are converted: categories become an array, timestamps become date objects. */
@@ -24,6 +44,8 @@ class Concern extends Model
             'reviewed_at'  => 'datetime',
             'resolved_at'  => 'datetime',
             'viewed_at'    => 'datetime',
+            'reminder_snoozed_at' => 'datetime',
+            'match_confirmed_at' => 'datetime',
             'suggest_new'  => 'boolean',
         ];
     }

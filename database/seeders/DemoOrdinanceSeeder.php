@@ -16,7 +16,7 @@ class DemoOrdinanceSeeder extends Seeder
 
         $demo = [
             [
-                'number' => 'Demo Ordinance No. 2024-012', 'title' => 'Solid Waste Management Ordinance', 'category' => 'waste',
+                'number' => 'Ordinance No. 2024-012', 'title' => 'Solid Waste Management Ordinance', 'category' => 'collection',
                 'status' => 'Active', 'version' => 'v2', 'enacted_on' => '2024-03-12',
                 'keywords' => ['garbage', 'trash', 'waste', 'basura', 'dump', 'litter', 'collection', 'segregat', 'flood', 'clog'],
                 'sections' => [
@@ -27,7 +27,7 @@ class DemoOrdinanceSeeder extends Seeder
                 ],
             ],
             [
-                'number' => 'Demo Ordinance No. 2023-007', 'title' => 'Drainage and Veterinary Protection Ordinance', 'category' => 'flood',
+                'number' => 'Ordinance No. 2023-007', 'title' => 'Drainage and Veterinary Protection Ordinance', 'category' => 'flood',
                 'status' => 'Active', 'version' => 'v1', 'enacted_on' => '2023-08-21',
                 'keywords' => ['drain', 'canal', 'clog', 'overflow', 'flood', 'rain', 'animal', 'dog', 'stray'],
                 'sections' => [
@@ -37,7 +37,7 @@ class DemoOrdinanceSeeder extends Seeder
                 ],
             ],
             [
-                'number' => 'Demo Ordinance No. 2022-015', 'title' => 'Anti-Littering Ordinance', 'category' => 'waste',
+                'number' => 'Ordinance No. 2022-015', 'title' => 'Anti-Littering Ordinance', 'category' => 'litter',
                 'status' => 'Active', 'version' => 'v1', 'enacted_on' => '2022-05-09',
                 'keywords' => ['litter', 'trash', 'dump', 'throw', 'plastic', 'bottle', 'burn'],
                 'sections' => [
@@ -46,7 +46,7 @@ class DemoOrdinanceSeeder extends Seeder
                 ],
             ],
             [
-                'number' => 'Demo Ordinance No. 2024-020', 'title' => 'Dengue Prevention and Sanitation Ordinance', 'category' => 'health',
+                'number' => 'Ordinance No. 2024-020', 'title' => 'Dengue Prevention and Sanitation Ordinance', 'category' => 'health',
                 'status' => 'Under review', 'version' => 'v1', 'enacted_on' => '2024-09-30',
                 'keywords' => ['dengue', 'mosquito', 'stagnant', 'sanitation', 'sewage', 'disease', 'sick', 'smell'],
                 'sections' => [
@@ -55,12 +55,12 @@ class DemoOrdinanceSeeder extends Seeder
                 ],
             ],
             [
-                'number' => 'Demo Ordinance No. 2021-004', 'title' => 'Road Safety and Streetlight Ordinance', 'category' => 'road',
+                'number' => 'Ordinance No. 2021-004', 'title' => 'Illegal Dumping Prevention Ordinance', 'category' => 'dumping',
                 'status' => 'Draft', 'version' => 'v1', 'enacted_on' => null,
-                'keywords' => ['road', 'pothole', 'streetlight', 'bridge', 'sidewalk'],
+                'keywords' => ['dump', 'basura', 'garbage', 'trash', 'waste', 'throw'],
                 'sections' => [
-                    ['n' => 1, 'title' => 'Road Maintenance', 'text' => 'Potholes and damaged road sections shall be reported to the municipal engineering office and repaired in order of safety risk.'],
-                    ['n' => 2, 'title' => 'Public Lighting', 'text' => 'Streetlights along main roads and public plazas shall be inspected monthly and broken lights repaired within a reasonable time.'],
+                    ['n' => 1, 'title' => 'Prohibition on Illegal Dumping', 'text' => 'Dumping bulk waste, construction debris, or household garbage in vacant lots, roadsides, and waterways is strictly prohibited.'],
+                    ['n' => 2, 'title' => 'Reporting and Cleanup', 'text' => 'Reported illegal dumpsites shall be inspected by barangay officials and cleared promptly.']
                 ],
             ],
         ];

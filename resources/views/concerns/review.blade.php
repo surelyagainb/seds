@@ -22,7 +22,17 @@
         @foreach($keys as $k)<span class="chip {{ $cats[$k]['cls'] }}">{{ $cats[$k]['label'] }}</span>@endforeach
       </div>
     </div>
-    <div class="kv"><div class="k">Photo</div><div class="v">{{ $draft['photo_name'] ?: 'No photo attached' }}</div></div>
+    <div class="kv">
+      <div class="k">Photo</div>
+      @if(!empty($draft['photo_path']))
+        <div class="review-photo">
+          <img src="{{ route('concerns.draft-photo') }}" alt="Photo attached to this concern">
+        </div>
+        <div class="v photo-name">{{ $draft['photo_name'] }}</div>
+      @else
+        <div class="v">No photo attached</div>
+      @endif
+    </div>
   </section>
 
   <aside>

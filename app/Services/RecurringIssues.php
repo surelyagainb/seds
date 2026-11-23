@@ -30,12 +30,13 @@ class RecurringIssues
      * The recurring issues in the period, longest-recurring first.
      * Each item: key, barangay, category, times, span (months), first, last, months (counts per month), ordinance_id.
      */
-    public function find(int $months, ?string $barangay = null, ?string $category = null): Collection
+    public function find(int $months, ?string $barangay = null, ?string $category = null, array $assigned = []): Collection
     {
         $labels = static::monthLabels($months);
         $from   = now()->startOfMonth()->subMonths($months - 1);
 
         $concerns = Concern::filter(['barangay' => $barangay])
+            ->whereNull('canonical_concern_id')
             ->with('matches:id,concern_id,ordinance_id,score')
             ->where('submitted_at', '>=', $from)
             ->get(['id', 'barangay', 'categories', 'submitted_at', 'matched_ordinance_id']);
@@ -45,6 +46,7 @@ class RecurringIssues
         foreach ($concerns as $c) {
             foreach ($c->categoryKeys() as $cat) {
                 if ($category && $cat !== $category) continue;
+                if ($assigned && ! in_array($cat, $assigned, true)) continue;
                 $groups[$c->barangay.'|'.$cat][] = $c;
             }
         }

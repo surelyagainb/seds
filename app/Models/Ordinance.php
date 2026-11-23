@@ -5,7 +5,15 @@ namespace App\Models;
 use App\Services\OrdinanceMatcher;
 use Illuminate\Database\Eloquent\Model;
 
-/** An ordinance that can be suggested for a concern. */
+/** An ordinance that can be suggested for a concern.
+ *
+ * @property int $id
+ * @property string|null $number
+ * @property string $title
+ * @property string $category
+ * @property array|null $keywords
+ * @property array|null $sections
+ */
 class Ordinance extends Model
 {
     /** The statuses an ordinance can have. "Draft" ordinances are never suggested for concerns. */

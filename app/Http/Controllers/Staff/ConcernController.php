@@ -9,6 +9,9 @@ use App\Services\AuditLogger;
 use App\Services\OrdinanceMatcher;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Models\Notification;
+use App\Models\User;
+use Illuminate\Support\Carbon;
 
 /** SB members reviewing concerns: list, detail with candidate ordinances, and their decisions. */
 class ConcernController extends Controller
@@ -19,13 +22,26 @@ class ConcernController extends Controller
         $filters = $request->only(['q', 'category', 'barangay']);
         $status  = $request->query('status');
 
-        $concerns = Concern::filter($filters)->staffStatus($status)
+        $query = Concern::filter($filters)->staffStatus($status);
+        $assigned = $request->user()->assigned_categories ?: [];
+        if ($assigned) {
+            $query->where(function ($where) use ($assigned) {
+                foreach ($assigned as $category) {
+                    $where->orWhereJsonContains('categories', $category);
+                }
+            });
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+        $concerns = $query
             ->latest('submitted_at')->paginate(15)->withQueryString();
 
         return view('staff.concerns.index', [
             'concerns' => $concerns,
             'filters'  => $request->only(['q', 'category', 'barangay', 'status']),
-            'total'    => Concern::count(),
+            'total'    => $assigned ? Concern::where(function ($where) use ($assigned) {
+                foreach ($assigned as $category) $where->orWhereJsonContains('categories', $category);
+            })->count() : 0,
         ]);
     }
 
@@ -36,10 +52,15 @@ class ConcernController extends Controller
      */
     public function show(Request $request, Concern $concern, OrdinanceMatcher $matcher)
     {
+        $assigned = $request->user()->assigned_categories ?: [];
+        if ($assigned && ! collect($assigned)->intersect($concern->categoryKeys())->isNotEmpty()) {
+            abort(404);
+        }
+        if (! $assigned) abort(404);
         if (! $concern->viewed_at) {
             if (! $concern->analyzed_at) $matcher->matchAndSave($concern);
 
-            $concern->viewed_at = now();
+            $concern->viewed_at = Carbon::now();
             $concern->save();
             $concern->log('Viewed by staff');
         }
@@ -79,10 +100,14 @@ class ConcernController extends Controller
     /** Confirm or reject the selected ordinance match. Staff can change their mind later. */
     public function decide(Request $request, Concern $concern)
     {
+        if ($concern->decision === 'confirmed') {
+            return back()->withErrors(['decision' => 'This match was already confirmed and cannot be confirmed twice.']);
+        }
         $data = $request->validate([
             'action'       => ['required', Rule::in(['confirm', 'reject'])],
             'ordinance_id' => ['required', 'exists:ordinances,id'],
             'note'         => ['nullable', 'string', 'max:500'],
+            'rejection_reason' => [Rule::requiredIf($request->input('action') === 'reject'), 'nullable', 'string', 'min:10', 'max:1000'],
         ]);
 
         $ordinance = Ordinance::findOrFail($data['ordinance_id']);
@@ -94,12 +119,26 @@ class ConcernController extends Controller
             'matched_ordinance_id' => $ordinance->id,
             'reviewed_at'          => now(),
             'reviewed_by'          => $request->user()->id,
+            'rejection_reason'     => $confirm ? null : trim($data['rejection_reason'] ?? ''),
+            'match_confirmed_at'   => $confirm ? now() : null,
         ])->save();
 
         $concern->log(($confirm ? 'Match confirmed: ' : 'Match rejected: ').$ordinance->title.'.'.($note !== '' ? ' Note: '.$note : ''));
         AuditLogger::activity($confirm ? 'Match confirmed' : 'Match rejected', $concern->reference.' · '.$ordinance->title);
+        Notification::create([
+            'user_id' => $concern->user_id,
+            'title' => $confirm ? 'Concern reviewed' : 'Concern rejected',
+            'message' => $confirm
+                ? 'Municipal staff reviewed concern '.$concern->reference.'.'
+                : 'Concern '.$concern->reference.' was rejected. Reason: '.($concern->rejection_reason ?: 'Not provided'),
+            'type' => 'concern',
+            'link' => route('concerns.status', ['ref' => $concern->reference]),
+        ]);
 
-        return back()->with('status', $confirm ? "Match confirmed. The citizen's tracker now shows Reviewed." : 'Match rejected.');
+        if ($confirm) {
+            return redirect()->route('staff.dashboard')->with('status', 'Match confirmed on '.now()->format('j M Y, h:i A').' by '.$request->user()->username.'.');
+        }
+        return back()->with('status', 'Match rejected. A reason was saved and shown to the citizen.');
     }
 
     /** Send the concern to another office, with a reason (shown in the activity log). */
@@ -152,6 +191,14 @@ class ConcernController extends Controller
         return back()->with('status', "Marked as unmatched. The citizen's tracker now shows Reviewed.");
     }
 
+    public function snooze(Concern $concern)
+    {
+        $concern->forceFill(['reminder_snoozed_at' => now()->addDay()])->save();
+        $concern->log('Review reminder snoozed for one day', auth()->user());
+
+        return back()->with('status', 'Reminder snoozed until tomorrow.');
+    }
+
     /** No-match page: flag the concern as a possible new ordinance for the Sangguniang Bayan. */
     public function suggestNew(Concern $concern)
     {
@@ -166,6 +213,12 @@ class ConcernController extends Controller
     /** The offices a concern can be sent to (includes the barangay captain of its barangay). */
     private function offices(Concern $concern): array
     {
-        return array_merge(config('staff.offices'), ['Barangay Captain of '.$concern->barangay]);
+        $members = User::where('role','sb_member')->where('is_active',true)->get()->map(function ($member) {
+            $categories = collect($member->assigned_categories ?: [])
+                ->map(fn ($key) => config('concerns.categories.'.$key.'.label', $key))
+                ->join(', ');
+            return 'SB member: '.$member->name.' — '.($categories ?: 'No committee assigned');
+        });
+        return $members->merge(['Barangay Captain of '.$concern->barangay])->unique()->values()->all();
     }
 }

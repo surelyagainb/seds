@@ -145,6 +145,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--navy);bo
 .heat-wrap{display:block;margin-top:10px}
 .map{position:relative;height:520px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#edf2f7}
 .map-load-error{height:100%;display:grid;place-items:center;color:var(--muted);font-size:12px}
+.map-load-error .btn{margin-left:8px}
 .concern-marker-wrap{background:none;border:none}
 .concern-marker{display:flex;flex-direction:column;align-items:center;color:#102c55;font-weight:800;transition:opacity .2s}
 .concern-marker-name{font-size:13px;text-shadow:0 1px 2px #fff,1px 0 2px #fff,-1px 0 2px #fff;margin-bottom:4px;white-space:nowrap}
@@ -218,3 +219,23 @@ tr.clickable td a{color:inherit}
 .ord-link{font-weight:700}
 .bars .b .bar{min-width:60px}
 .map-fallback{height:100%;display:grid;place-items:center;color:var(--muted);font-size:12px}
+
+.side-seal{width:34px;height:34px;object-fit:contain;border-radius:50%;flex:none;display:block}
+.sidebar{display:flex;flex-direction:column}
+.side-seal{width:34px;height:34px;object-fit:contain;border-radius:50%;flex:none;display:block}
+.whoami{margin-top:auto;padding:12px 16px 16px;border-top:1px solid var(--line)}
+.whoami-name{font-weight:500;font-size:14px;color:var(--ink)}
+.whoami .muted.small{font-size:12.5px}
+.whoami form{margin:0}
+.whoami .link-btn{background:none;border:0;padding:6px 0 0;color:var(--navy);font:inherit;font-size:14px;cursor:pointer;text-decoration:none}
+.whoami .link-btn:hover{text-decoration:underline}
+
+.sidebar{width:228px;flex:none;background:#fff;border-right:1px solid #E1E5EB;padding:0 0 20px;display:flex;flex-direction:column;gap:14px}
+.side-brand{display:flex;align-items:center;gap:10px;padding:14px 14px;border-bottom:1px solid #E1E5EB;color:var(--navy);text-decoration:none}
+.brand-seal{width:34px;height:34px;object-fit:contain;border-radius:50%;flex:none;display:block}
+.brand-copy{display:flex;flex-direction:column;gap:2px;min-width:0}
+.brand-title{font-weight:800;font-size:12.5px;line-height:1.15;letter-spacing:-.015em;color:inherit}
+.brand-sub{font-size:8.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);line-height:1.15}
+.auth-header-box .brand-title{font-size:17px}
+.auth-header-box .brand-sub{font-size:10px;letter-spacing:.06em}
+.auth-header-box .brand-seal{width:48px;height:48px;background:#fff;padding:2px;box-shadow:0 2px 8px rgba(29,33,48,.08)}

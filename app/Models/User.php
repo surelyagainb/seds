@@ -7,7 +7,10 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 /** An account. Admins, SB members and citizens are all stored here, told apart by the role column. */
 class User extends Authenticatable
 {
-    protected $fillable = ['name', 'email', 'password', 'is_active', 'password_changed_at'];
+    protected $fillable = [
+        'name', 'username', 'email', 'mobile', 'password', 'is_active', 'status',
+        'password_changed_at', 'verified_at', 'last_login_at', 'role', 'assigned_categories',
+    ];
     // 'role' is deliberately not fillable: it can only be set explicitly (e.g. by the seeder
     // or a future approved office-request flow), never through form input.
     protected $hidden = ['password', 'remember_token'];
@@ -19,6 +22,10 @@ class User extends Authenticatable
             'password'            => 'hashed',
             'is_active'           => 'boolean',
             'password_changed_at' => 'datetime',
+            'verified_at'          => 'datetime',
+            'last_login_at'        => 'datetime',
+            'verification_sent_at' => 'datetime',
+            'assigned_categories'  => 'array',
         ];
     }
 
@@ -47,6 +54,11 @@ class User extends Authenticatable
     public function roleLabel(): string
     {
         return config("admin.roles.{$this->role}.label", ucfirst($this->role));
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
     }
 
     /** Administrators can always do everything; other roles follow the role_permissions table. */

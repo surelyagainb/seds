@@ -69,8 +69,8 @@
         <label for="note">Notes (optional)</label>
         <textarea id="note" name="note" maxlength="500" placeholder="Add a note for the activity log">{{ old('note') }}</textarea>
         <div class="row mt">
-          <button class="btn primary" type="submit" name="action" value="confirm">Confirm match</button>
-          <button class="btn danger" type="submit" name="action" value="reject">Reject</button>
+          <button class="btn primary" type="submit" name="action" value="confirm" {{ $concern->decision==='confirmed'?'disabled':'' }}>{{ $concern->decision==='confirmed' ? 'Match confirmed on '.($concern->match_confirmed_at?->format('j M Y') ?: 'a previous date') : 'Confirm match' }}</button>
+          <button class="btn danger" type="button" data-open="rejectMatch" {{ $concern->decision==='confirmed'?'disabled':'' }}>Reject</button>
           <button class="btn outline" type="button" data-open="reassign">Reassign</button>
         </div>
       </form>
@@ -82,6 +82,19 @@
 @endsection
 
 @push('modals')
+<div class="modal-back" id="rejectMatch" role="dialog" aria-modal="true" aria-labelledby="rejectTitle">
+  <form class="modal" method="POST" action="{{ route('staff.concerns.decide',$concern) }}">
+    @csrf
+    <input type="hidden" name="action" value="reject">
+    <input type="hidden" name="ordinance_id" value="{{ $sel->ordinance_id }}">
+    <div class="modal-head"><h2 id="rejectTitle">Reject match</h2><button type="button" data-close aria-label="Close">×</button></div>
+    <label for="rejectionReason">Reason for rejection *</label>
+    <textarea id="rejectionReason" name="rejection_reason" minlength="10" maxlength="1000" required placeholder="Required: explain why this ordinance does not fit.">{{ old('rejection_reason') }}</textarea>
+    <div class="hint"><span id="rejectionCount">0</span>/1000 characters</div>
+    @error('rejection_reason')<div class="error show">{{ $message }}</div>@enderror
+    <div class="modal-actions"><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn danger">Reject match</button></div>
+  </form>
+</div>
 {{-- Reassign pop-up --}}
 <div class="modal-back {{ $errors->hasAny(['assigned_to', 'reason']) ? 'open' : '' }}" id="reassign" role="dialog" aria-modal="true" aria-labelledby="rTitle">
   <form class="modal" method="POST" action="{{ route('staff.concerns.reassign', $concern) }}">
@@ -102,4 +115,14 @@
     </div>
   </form>
 </div>
+@endpush
+@push('scripts')
+<script>
+const rejectionReason=document.getElementById("rejectionReason");
+const rejectionCount=document.getElementById("rejectionCount");
+if(rejectionReason){
+ const update=()=>rejectionCount.textContent=rejectionReason.value.length;
+ rejectionReason.addEventListener("input",update);update();
+}
+</script>
 @endpush

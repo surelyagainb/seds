@@ -18,11 +18,11 @@
 
 {{-- Stat cards --}}
 <div class="stats">
-  <div class="stat dark"><span>Total concerns</span><b>{{ number_format($total) }}</b><span>{{ $barangay ?: 'All barangays' }}</span></div>
-  <div class="stat"><span>Matched</span><b>{{ number_format($matched) }}</b><span>{{ $total ? round($matched / $total * 100) : 0 }}% of total</span></div>
-  <div class="stat"><span>Unmatched / pending</span><b>{{ number_format($pending) }}</b><span>Need staff attention</span></div>
-  <div class="stat"><span>Recurring issues</span><b>{{ $recurring }}</b><span>{{ $barangay ?: 'Municipality-wide' }}</span></div>
-  <div class="stat"><span>Ordinances flagged</span><b>{{ $flagged }}</b><span>For review</span></div>
+  <a class="stat dark {{ $category?'':'active-kpi' }}" href="{{ route('staff.concerns.index') }}" title="Open all concerns assigned to you"><span>Total concerns</span><b>{{ number_format($total) }}</b><span>{{ $barangay ?: 'All barangays' }}</span></a>
+  <a class="stat {{ $category?'':'active-kpi' }}" href="{{ route('staff.concerns.index',['status'=>'Reviewed']) }}" title="Concerns that have an ordinance match"><span>Matched</span><b>{{ number_format($matched) }}</b><span>{{ $total ? round($matched / $total * 100) : 0 }}% of total</span></a>
+  <a class="stat {{ $category?'':'active-kpi' }}" href="{{ route('staff.concerns.index',['status'=>'Needs review']) }}" title="Concerns that still need a staff decision"><span>Pending</span><b>{{ number_format($pending) }}</b><span>Need staff attention</span></a>
+  <a class="stat" href="{{ route('staff.recurring') }}" title="Issues reported repeatedly across months"><span>Recurring issues</span><b>{{ $recurring }}</b><span>{{ $barangay ?: 'Municipality-wide' }}</span></a>
+  <a class="stat" href="{{ route('staff.ordinances.index') }}" title="Ordinances currently flagged or under review"><span>Ordinances flagged</span><b>{{ $flagged }}</b><span>For review</span></a>
 </div>
 
 {{-- Filters (the page reloads with the chosen values) --}}
@@ -36,15 +36,25 @@
       @foreach(config('concerns.categories') as $k => $c)<option value="{{ $k }}" @selected($category === $k)>{{ $c['label'] }}</option>@endforeach
     </select></div>
   <div><label for="fd">Date range</label>
-    <select id="fd" name="months"><option value="6" @selected($months === 6)>Last 6 months</option><option value="3" @selected($months === 3)>Last 3 months</option></select></div>
+    <select id="fd" name="period">
+      <option value="today" @selected($period==='today')>Today</option>
+      <option value="week" @selected($period==='week')>This week</option>
+      <option value="month" @selected($period==='month')>This month</option>
+      <option value="year" @selected($period==='year')>This year</option>
+      <option value="all" @selected($period==='all')>All time</option>
+    </select></div>
   <div class="btns"><button class="btn primary" type="submit">Apply filters</button><a class="btn" href="{{ route('staff.dashboard') }}">Reset</a></div>
 </form>
 
-{{-- Map: one pin per barangay that has coordinates in config/staff.php. Clicking a pin filters the page to that barangay. --}}
+{{-- Interactive marker map: barangays and exact concern locations. --}}
 <section class="card mb">
   <h2>Concern heatmap</h2>
   <p class="muted small">Report concentration by barangay <span aria-hidden="true">•</span> Drag, zoom or select a pin to inspect a barangay.</p>
-  <div class="heat-wrap"><div class="map" id="map" aria-label="Interactive map of concern locations"></div></div>
+  <div class="heat-wrap">
+    <p class="muted small" id="mapStatus" role="status" aria-live="polite">Loading map markers...</p>
+    <div class="map" id="overview-map" role="region" aria-label="Interactive map of concern locations" aria-live="polite"></div>
+    <button class="btn" id="mapRetry" type="button" hidden>Retry map</button>
+  </div>
 </section>
 
 {{-- Chart: concerns per month by category --}}
@@ -52,23 +62,35 @@
   <h2>Concerns over time, by category</h2>
   <p class="muted small">Monthly concerns received{{ $barangay ? ' in '.$barangay : '' }}. A concern with several categories is counted in each. Click a legend item to hide a category.</p>
   <div class="chart-box"><canvas id="chart" aria-label="Stacked bar chart of concerns per month by category" role="img"></canvas></div>
-  <p class="muted small" id="chartFallback" hidden>The chart could not load (Chart.js needs an internet connection).</p>
+  <p class="muted small" id="chartFallback" hidden>The chart could not load. <button type="button" class="btn" onclick="location.reload()">Retry</button></p>
 </section>
 
-{{-- Table per barangay --}}
+{{-- Needs your attention --}}
 <section class="card flush">
-  <div style="padding:16px 18px 6px"><h2>Concerns by barangay</h2><p class="muted small">Total, matched and unmatched concerns. Select a barangay to see its details.</p></div>
-  <div class="scroll">
-    <table class="table">
-      <thead><tr><th>Barangay</th><th class="num">Total</th><th class="num">Matched</th><th class="num">Unmatched</th><th></th></tr></thead>
-      <tbody>
-      @foreach($rows as $r)
-        <tr><td><b>{{ $r['name'] }}</b></td><td class="num">{{ $r['total'] }}</td><td class="num">{{ $r['matched'] }}</td><td class="num">{{ $r['unmatched'] }}</td>
-          <td class="num"><a href="{{ route('staff.barangays.show', $r['name']) }}">View details</a></td></tr>
-      @endforeach
-      </tbody>
-      <tfoot><tr><td>Total</td><td class="num">{{ $total }}</td><td class="num">{{ $matched }}</td><td class="num">{{ $pending }}</td><td></td></tr></tfoot>
-    </table>
+  <div style="padding:16px 18px 6px"><h2>Needs your attention</h2><p class="muted small">Review queue and ordinance gaps for your assigned categories.</p></div>
+  <div class="grid-split" style="padding:0 18px 18px">
+    <div>
+      <h3>Review queue by age</h3>
+      <div class="row gap" style="margin-top:10px">
+        <a class="badge amber" href="{{ route('staff.concerns.index',['status'=>'Needs review']) }}" title="Waiting 5 to 6 days">Due soon: {{ $attention['due'] }}</a>
+        <a class="badge red" href="{{ route('staff.concerns.index',['status'=>'Needs review']) }}" title="Waiting 7 to 29 days">Overdue: {{ $attention['overdue'] }}</a>
+        <a class="badge red" href="{{ route('staff.concerns.index',['status'=>'Needs review']) }}" title="Waiting 30 days or more">Critical: {{ $attention['critical'] }}</a>
+      </div>
+      @forelse($reminders as $reminder)
+        @php($age=$reminder->submitted_at->diffInDays(now()))
+        <div class="kv"><span><b>{{ $reminder->reference }}</b><br>{{ $age }} days waiting</span><form method="POST" action="{{ route('staff.concerns.snooze',$reminder) }}">@csrf<button class="btn" type="submit">Snooze 1 day</button></form></div>
+      @empty
+        <p class="muted small mt">No review reminders right now.</p>
+      @endforelse
+    </div>
+    <div>
+      <h3>Ordinance gaps</h3>
+      @forelse($gaps->where('count','>',0)->take(5) as $gap)
+        <div class="kv"><span><b>{{ $gap['label'] }}</b><br>{{ $gap['count'] }} concerns without a match</span><a class="btn outline" href="{{ route('staff.ordinances.index',['category'=>$gap['key']]) }}">Suggest new ordinance</a></div>
+      @empty
+        <p class="muted small mt">No ordinance gaps found for assigned categories.</p>
+      @endforelse
+    </div>
   </div>
 </section>
 @endsection
@@ -77,36 +99,18 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-const PINS = @json($pins);
-const SELECTED = @json($barangay);
-const CENTER = @json(config('staff.map_center'));
 const LABELS = @json($labels);
 const SERIES = @json($chart);
 const COLORS = { waste: "#2e9e6b", flood: "#3b78b8", health: "#d9577e", road: "#e0a02e", other: "#8b7fc7" };
 const el = id => document.getElementById(id);
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-/* ---- map (OpenStreetMap tiles) ---- */
-if (!window.L) {
-  el("map").innerHTML = '<div class="map-fallback">Map tiles could not load. Check your internet connection.</div>';
-} else {
-  const map = L.map("map").setView([CENTER.lat, CENTER.lng], CENTER.zoom);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  }).addTo(map);
-
-  PINS.forEach(p => {
-    const icon = L.divIcon({
-      className: "concern-marker-wrap" + (SELECTED && SELECTED !== p.name ? " dim" : ""),
-      html: '<div class="concern-marker' + (p.primary ? " primary" : "") + '"><span class="concern-marker-name">' + esc(p.name) + '</span><span class="concern-marker-value">' + p.total + '</span></div>',
-      iconSize: [76, 82], iconAnchor: [38, 82], popupAnchor: [0, -78]
-    });
-    const marker = L.marker([p.lat, p.lng], { icon, keyboard: true, title: p.name + ": " + p.total + " concerns" }).addTo(map);
-    marker.bindPopup("<strong>" + esc(p.name) + "</strong><br>" + p.total + " concerns<br><a href=\"" + @json(url('staff/barangays')) + "/" + encodeURIComponent(p.name) + "\">View barangay</a>");
-    marker.on("click", () => { el("fb").value = p.name; el("filters").submit(); });
-  });
-  setTimeout(() => map.invalidateSize(), 0);
-}
+document.addEventListener("DOMContentLoaded", () => {
+  const mapUrl = @json(route('map.data'))
+    + "?period=" + encodeURIComponent(@json($period))
+    + "&barangay=" + encodeURIComponent(@json($barangay ?? ""))
+    + "&category=" + encodeURIComponent(@json($category ?? ""));
+  initOverviewMap(mapUrl, "overview-map");
+});
 
 /* ---- chart (Chart.js) ---- */
 if (!window.Chart) { el("chartFallback").hidden = false; }
