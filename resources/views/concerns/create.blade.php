@@ -9,7 +9,7 @@
 <h1>A better Victoria starts with you.</h1>
 <p class="lead">Report a local concern. Help the municipality connect community needs with the right ordinances.</p>
 
-<div class="grid">
+<div class="grid concern-layout">
   <form class="card" id="form" method="POST" action="{{ route('concerns.preview') }}" enctype="multipart/form-data" novalidate>
     @csrf
     <div class="card-head"><h2>Submit a concern</h2><span class="pill">Step 1 of 2</span></div>

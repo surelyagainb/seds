@@ -15,7 +15,7 @@ use App\Http\Controllers\Staff;
 use Illuminate\Support\Facades\Route;
 
 // Home page (/): signed-in people go to their own area (admin or citizen), everyone else goes to the login page.
-Route::get('/', fn () => auth()->check()
+Route::get('/', fn() => auth()->check()
     ? redirect()->route(auth()->user()->homeRoute())
     : redirect()->route('login'));
 
