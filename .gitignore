@@ -3,6 +3,7 @@
 .env
 .env.backup
 
+<<<<<<< HEAD
 # Generated files (they differ on every computer, so they must not be shared)
 /storage/*.key
 /storage/logs/*
@@ -18,3 +19,5 @@
 # Uploaded photos from testing
 /storage/app/private/*
 !/storage/app/private/.gitkeep
+=======
+>>>>>>> da7f13caea06a12e0fc3b88108ca9b77735219be
