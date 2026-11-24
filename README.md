@@ -40,6 +40,13 @@ You need PHP 8.3+, Composer, and MySQL (Laragon has all three).
 > If you already ran step 4 before and only pulled new code, run `php artisan migrate` instead.
 > `migrate:fresh` **deletes everything** in the database first.
 
+### Moving the project to another computer
+
+- **Do not copy `.env`** to another computer. It holds your own passwords (database, Gmail App Password). On the new computer, copy `.env.example` to `.env`, fill in that computer's values, and run `php artisan key:generate`.
+- **Do not copy generated files**: `bootstrap/cache/*.php`, `storage/framework/views/*`, `storage/framework/cache/*`, `storage/logs/*`. They are rebuilt automatically, and they are ignored by git. (Copied ones can point to folders that only exist on the old computer.)
+- The folders Laravel needs (`storage/framework/views`, `storage/logs`, `bootstrap/cache` and so on) are now created automatically on the first run, so an error like **"Please provide a valid cache path"** should not appear anymore. If you ever see it, run `php artisan view:clear` once.
+- The project folder can be named anything. The recommended name is `victoria-backend`.
+
 ---
 
 ## 2. Email verification (Gmail OTP)
