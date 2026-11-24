@@ -14,7 +14,8 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'log'),
+    // smtp = really send the email (Gmail). "log" only writes the email into storage/logs/laravel.log and sends nothing.
+    'default' => env('MAIL_MAILER', 'smtp'),
 
     /*
     |--------------------------------------------------------------------------
@@ -41,11 +42,15 @@ return [
             'transport' => 'smtp',
             'scheme' => env('MAIL_SCHEME'),
             'url' => env('MAIL_URL'),
-            'host' => env('MAIL_HOST', '127.0.0.1'),
-            'port' => env('MAIL_PORT', 2525),
+            'host' => env('MAIL_HOST', 'smtp.gmail.com'),
+            'port' => (int) env('MAIL_PORT', 587),
             'username' => env('MAIL_USERNAME'),
-            'password' => env('MAIL_PASSWORD'),
-            'timeout' => null,
+            // Google shows an App Password in groups of four with spaces. The spaces are not part of the password.
+            'password' => str_replace(' ', '', (string) env('MAIL_PASSWORD')),
+            // Give up after this many seconds, so a blocked connection shows an error instead of freezing the page
+            'timeout' => (int) env('MAIL_TIMEOUT', 20),
+            // Keep true. Only set MAIL_VERIFY_PEER=false for local testing if PHP cannot verify Gmail's certificate.
+            'verify_peer' => filter_var(env('MAIL_VERIFY_PEER', true), FILTER_VALIDATE_BOOL),
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
@@ -111,8 +116,9 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', 'Example'),
+        // Gmail sends from the account that logs in, so fall back to MAIL_USERNAME when no From address is set
+        'address' => env('MAIL_FROM_ADDRESS') ?: env('MAIL_USERNAME', 'hello@example.com'),
+        'name' => env('MAIL_FROM_NAME', 'Victoria'),
     ],
 
     /*

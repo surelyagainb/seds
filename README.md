@@ -50,7 +50,7 @@ Every account that can sign in needs an email address. Mobile numbers remain opt
 
 Before running `php artisan migrate:fresh --seed`, set `ADMIN_EMAIL` in `.env` to an inbox you can open. The seeded administrator uses that email address and needs it to receive login codes. The starter password is still `admin`; change it after the first sign in. If the database was already seeded, update the administrator's email through Admin > Accounts or set `ADMIN_EMAIL` and run `php artisan db:seed`; this updates the email without resetting an existing administrator password.
 
-To use Gmail, open `.env` and set the mail values below. Use a Google **App Password**, not your normal Gmail password. Turn on 2-Step Verification in the Google account before creating an App Password.
+To use Gmail, open `.env` and set the mail values below. Use a Google **App Password**, not your normal Gmail password. Turn on 2-Step Verification in the Google account first, then create the App Password at https://myaccount.google.com/apppasswords.
 
 ```env
 MAIL_MAILER=smtp
@@ -58,12 +58,35 @@ MAIL_SCHEME=null
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USERNAME=your-gmail@gmail.com
-MAIL_PASSWORD=your-16-character-app-password
+MAIL_PASSWORD="abcd efgh ijkl mnop"
 MAIL_FROM_ADDRESS=your-gmail@gmail.com
 MAIL_FROM_NAME="Victoria Admin"
 ```
 
-`MAIL_USERNAME` and `MAIL_FROM_ADDRESS` should be the Gmail account used by the system to send verification codes. Users can receive the code at their own email address; they do not need to use Gmail. Keep `.env` private and do not upload it to GitHub. After changing mail settings, run `php artisan config:clear` if Laravel configuration was cached.
+`MAIL_USERNAME` and `MAIL_FROM_ADDRESS` should be the Gmail account used by the system to send verification codes. Users can receive the code at their own email address; they do not need to use Gmail. Keep `.env` private and do not upload it to GitHub.
+
+**After every change to `.env`, run `php artisan config:clear`.** Laravel remembers the old values until you do.
+
+### If the code does not arrive
+
+Run this in the terminal. It shows the settings Laravel is really using, warns about the common mistakes, and sends a test email with the exact error if it fails:
+
+```
+php artisan mail:test
+php artisan mail:test someone@example.com
+```
+
+While `APP_DEBUG=true`, the login and register pages also show what to fix. The full technical error is always written to `storage/logs/laravel.log`.
+
+| What you see | What it means | Fix |
+|---|---|---|
+| "Email sending is switched off" | `MAIL_MAILER` is `log` or missing, so nothing is really sent | Set `MAIL_MAILER=smtp`, then `php artisan config:clear` |
+| "Gmail is not set up yet" | `MAIL_USERNAME` / `MAIL_PASSWORD` are empty or still the examples | Fill them in with your Gmail and App Password |
+| "Gmail rejected the login" (535) | Wrong password. A normal Gmail password does not work | Create a Google App Password (needs 2-Step Verification). It has 16 characters |
+| Nothing happens or the page freezes | Port 587 is blocked or there is no internet | Check the connection, firewall and antivirus. Try `MAIL_PORT=465` with `MAIL_SCHEME=smtps` |
+| "could not verify the security certificate" | PHP on Windows has no certificate list | Set `openssl.cafile` in `php.ini`. For local testing only: `MAIL_VERIFY_PEER=false` |
+| The page says "sent" but no email arrives | The code went to another address, for example the seeded admin's `ADMIN_EMAIL` | Check the address shown on the verify page, and the Spam folder |
+| `.env` error about whitespace | The App Password has spaces and no quotes | Put it in quotes: `MAIL_PASSWORD="abcd efgh ijkl mnop"` |
 
 The `email_otps` table stores only a hash of each code. Run the new migration with `php artisan migrate` after updating an existing database.
 
