@@ -5,16 +5,15 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 
-/** Keeps administrators and SB members out of the citizen pages; they have their own areas. */
+/** Restricts citizen pages to citizen accounts. */
 class EnsureCitizen
 {
-    /** If an admin or SB member opens a citizen page, send them to their own area instead. */
+    /** Send users with another valid role to their own area. */
     public function handle(Request $request, Closure $next)
     {
         $user = $request->user();
 
-        // Admins and SB members have their own areas
-        if ($user && ($user->isAdmin() || $user->isSbMember())) {
+        if ($user && $user->role !== 'citizen') {
             return redirect()->route($user->homeRoute());
         }
 

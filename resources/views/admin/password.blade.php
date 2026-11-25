@@ -22,14 +22,14 @@
 
         <div class="field">
             <label for="password">New password</label>
-            <input id="password" type="password" name="password" placeholder="Enter a new password" autocomplete="new-password" required>
-            <div class="hint">Use at least 12 characters, including a number and symbol.</div>
+            <input id="password" type="password" name="password" minlength="8" placeholder="Enter a new password" autocomplete="new-password" required>
+            <div class="hint">Use at least 8 characters, including a number and symbol.</div>
             @error('password')<div class="error">{{ $message }}</div>@enderror
         </div>
 
         <div class="field">
             <label for="password_confirmation">Confirm new password</label>
-            <input id="password_confirmation" type="password" name="password_confirmation" placeholder="Re-enter your new password" autocomplete="new-password" required>
+            <input id="password_confirmation" type="password" name="password_confirmation" minlength="8" placeholder="Re-enter your new password" autocomplete="new-password" required>
         </div>
 
         <div class="row-split">

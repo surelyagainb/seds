@@ -13,13 +13,15 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $category
  * @property array|null $keywords
  * @property array|null $sections
+ * @property string|null $file_path
+ * @property string|null $file_name
  */
 class Ordinance extends Model
 {
     /** The statuses an ordinance can have. "Draft" ordinances are never suggested for concerns. */
     public const STATUSES = ['Active', 'Under review', 'Draft'];
 
-    protected $fillable = ['number', 'title', 'category', 'status', 'version', 'enacted_on', 'keywords', 'summary', 'sections'];
+    protected $fillable = ['number', 'title', 'category', 'status', 'version', 'enacted_on', 'keywords', 'summary', 'sections', 'file_path', 'file_name'];
 
     /** How columns are converted: keywords and sections become arrays, enacted_on becomes a date. */
     protected function casts(): array

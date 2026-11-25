@@ -267,6 +267,105 @@ class ConcernController extends Controller
         return view('concerns.ordinance', compact('ordinance'));
     }
 
+    public function downloadOrdinance(Ordinance $ordinance)
+    {
+        if ($ordinance->file_path && Storage::disk('local')->exists($ordinance->file_path)) {
+            $name = $ordinance->file_name ?: basename($ordinance->file_path);
+            $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+            if ($extension !== 'pdf') {
+                $name .= '.pdf';
+            }
+            return Storage::disk('local')->download($ordinance->file_path, $name);
+        }
+
+        $safeName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $ordinance->number ?: 'ordinance').'.pdf';
+        $pdf = $this->buildOrdinancePdf($ordinance);
+
+        return response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$safeName.'"',
+        ]);
+    }
+
+    protected function buildOrdinancePdf(Ordinance $ordinance): string
+    {
+        $lines = [];
+        $lines[] = ['text' => $ordinance->number ?: 'Ordinance', 'size' => 18, 'bold' => true];
+        $lines[] = ['text' => $ordinance->title, 'size' => 14, 'bold' => true];
+        $lines[] = ['text' => '', 'size' => 12, 'bold' => false];
+
+        foreach ($ordinance->sections ?: [] as $section) {
+            $lines[] = [
+                'text' => $section['title'] ?? 'Section '.$section['n'],
+                'size' => 12,
+                'bold' => true,
+            ];
+            $lines[] = [
+                'text' => $section['text'] ?? '',
+                'size' => 11,
+                'bold' => false,
+            ];
+            $lines[] = ['text' => '', 'size' => 11, 'bold' => false];
+        }
+
+        $content = "BT\n";
+        $y = 760;
+        foreach ($lines as $line) {
+            $font = $line['bold'] ? 'F2' : 'F1';
+            $size = $line['size'];
+            foreach ($this->wrapPdfLine($line['text'], $line['bold'] ? 78 : 82) as $wrapped) {
+                $content .= "/{$font} {$size} Tf\n";
+                $content .= "1 0 0 1 72 {$y} Tm\n";
+                $content .= '('.$this->escapePdfText($wrapped).") Tj\n";
+                $y -= $size + 7;
+                if ($y < 60) break 2;
+            }
+            $y -= 5;
+        }
+        $content .= "ET";
+
+        $objects = [
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj",
+            "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj",
+            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>\nendobj",
+            "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj",
+            "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj",
+            "6 0 obj\n<< /Length ".strlen($content)." >>\nstream\n".$content."\nendstream\nendobj",
+        ];
+
+        $pdf = "%PDF-1.4\n";
+        $offsets = [0];
+        foreach ($objects as $index => $object) {
+            $offsets[] = strlen($pdf);
+            $pdf .= $object."\n";
+        }
+        $xref = strlen($pdf);
+        $pdf .= "xref\n0 7\n";
+        $pdf .= "0000000000 65535 f \n";
+        for ($i = 1; $i <= 6; $i++) {
+            $pdf .= sprintf("%010d 00000 n \n", $offsets[$i]);
+        }
+        $pdf .= "trailer\n<< /Size 7 /Root 1 0 R >>\n";
+        $pdf .= "startxref\n".$xref."\n%%EOF";
+
+        return $pdf;
+    }
+
+    protected function wrapPdfLine(string $text, int $characters): array
+    {
+        $text = preg_replace('/\s+/', ' ', trim($text)) ?: '';
+        if ($text === '') return [''];
+
+        $wrapped = wordwrap($text, $characters, "\n", false);
+        return explode("\n", $wrapped);
+    }
+
+    protected function escapePdfText(string $text): string
+    {
+        $text = str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $text);
+        return preg_replace('/[^\x20-\x7E]/', '', $text) ?: '';
+    }
+
     /** Track a concern by reference number. People only see their own concerns. */
     public function status(Request $request)
     {

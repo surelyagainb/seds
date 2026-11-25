@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // First administrator. Use an email inbox that can receive login codes.
+        // First administrator. Use a monitored inbox for account recovery.
         $admin = User::where('role', 'admin')->orderBy('id')->first();
 
         if (! $admin) {

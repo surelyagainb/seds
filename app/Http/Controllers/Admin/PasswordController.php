@@ -22,11 +22,12 @@ class PasswordController extends Controller
     {
         $data = $request->validate([
             'current_password' => ['required', 'current_password'],
-            'password'         => ['required', 'confirmed', 'different:current_password', Password::min(12)->numbers()->symbols()],
+            'password'         => ['required', 'confirmed', 'different:current_password', Password::min(8)->numbers()->symbols()],
         ], [
             'current_password.current_password' => 'Your current password is incorrect.',
             'password.different'                => 'Choose a password you have not used just now.',
             'password.confirmed'                => 'The two new passwords do not match.',
+            'password.min'                      => 'Use at least 8 characters.',
         ]);
 
         $user = $request->user();

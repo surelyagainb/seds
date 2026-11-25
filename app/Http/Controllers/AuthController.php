@@ -4,34 +4,29 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\AuditLogger;
-use App\Services\EmailOtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rules\Password;
 
 /** Sign in and sign out for every role. */
 class AuthController extends Controller
 {
-    /** Show the login page. */
     public function showLogin()
     {
         return view('auth.login');
     }
 
-    /** Show the municipal-hall login page for SB members and administrators. */
-    public function showHallLogin()
-    {
-        return view('auth.login', ['hallLogin' => true]);
-    }
-
-    /** Check the password and send an email code before signing the person in. */
-    public function login(Request $request, EmailOtpService $emailOtpService)
+    public function login(Request $request)
     {
         $credentials = $request->validate([
             'identity' => ['required', 'string', 'max:190'],
             'password' => ['required'],
+        ], [
+            'identity.required' => 'Please enter your username, email address, or mobile number.',
+            'password.required' => 'Please enter your password.',
         ]);
+
         $identity = trim($credentials['identity']);
         $user = User::where('username', $identity)
             ->orWhere('email', $identity)
@@ -39,168 +34,92 @@ class AuthController extends Controller
             ->first();
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
-            return back()->withInput($request->only('identity'))->withErrors([
-                'identity' => 'The account or password is incorrect.',
-            ]);
-        }
-
-        if ($request->boolean('hall') && $user->role === 'citizen') {
-            return back()->withInput($request->only('identity'))->withErrors([
-                'identity' => 'Municipal Hall login is only for SB members and administrators.',
-            ]);
-        }
-
-        if ($user->status === 'deactivated' || (! $user->is_active && $user->status !== 'pending')) {
-            return back()->withInput($request->only('identity'))->withErrors([
-                'identity' => 'Your account is deactivated. Contact the Municipal Hall.',
-            ]);
-        }
-
-        if (! $user->email) {
-            return back()->withInput($request->only('identity'))->withErrors([
-                'identity' => 'This account needs an email address to receive a verification code. Please contact the Municipal Hall.',
-            ]);
-        }
-
-        $request->session()->forget(['pending_login', 'verification_user_id']);
-        $request->session()->regenerate();
-
-        // Accounts that were not verified yet receive the registration code again.
-        if ($user->status === 'pending' || ! $user->verified_at) {
-            $user->forceFill([
-                'is_active' => false,
-                'status' => 'pending',
-            ])->save();
-            $request->session()->put('verification_user_id', $user->id);
-
-            try {
-                $emailOtpService->send($user->email, 'registration');
-            } catch (ValidationException $exception) {
-                $message = $exception->errors()['otp'][0] ?? 'The verification email could not be sent.';
-
-                if (str_contains($message, 'Please wait 60 seconds')) {
-                    return redirect()->route('register.verify')->with('status', 'A verification code was already sent. Please check your email.');
-                }
-
-                $request->session()->forget('verification_user_id');
-
-                return back()->withInput($request->only('identity'))->withErrors([
-                    'identity' => $message,
+            return back()
+                ->withInput($request->only('identity', 'remember'))
+                ->withErrors([
+                    'identity' => 'The account or password is incorrect.',
                 ]);
-            }
-
-            return redirect()->route('register.verify');
         }
 
-        if (! $user->is_active) {
-            return back()->withInput($request->only('identity'))->withErrors([
-                'identity' => 'Your account is deactivated. Contact the Municipal Hall.',
-            ]);
+        if (! in_array($user->role, ['citizen', 'sb_member', 'admin'], true)) {
+            return back()
+                ->withInput($request->only('identity', 'remember'))
+                ->withErrors([
+                    'identity' => 'The account or password is incorrect.',
+                ]);
         }
 
-        $request->session()->put('pending_login', [
-            'user_id' => $user->id,
-            'remember' => $request->boolean('remember'),
-        ]);
-
-        try {
-            $emailOtpService->send($user->email, 'login');
-        } catch (ValidationException $exception) {
-            $message = $exception->errors()['otp'][0] ?? 'The verification email could not be sent.';
-
-            if (str_contains($message, 'Please wait 60 seconds')) {
-                return redirect()->route('login.verify')->with('status', 'A verification code was already sent. Please check your email.');
-            }
-
-            $request->session()->forget('pending_login');
-
-            return back()->withInput($request->only('identity'))->withErrors([
-                'identity' => $message,
-            ]);
+        if ($user->status !== 'active' || ! $user->is_active) {
+            return back()
+                ->withInput($request->only('identity', 'remember'))
+                ->withErrors([
+                    'identity' => 'Your account is not active. Please contact the Municipal Hall.',
+                ]);
         }
 
-        return redirect()->route('login.verify');
-    }
-
-    /** Show the code-entry page for a pending login. */
-    public function showLoginOtp(Request $request)
-    {
-        $pending = $request->session()->get('pending_login');
-        $user = $pending ? User::find($pending['user_id']) : null;
-
-        if (! $user || ! $user->is_active || $user->status === 'deactivated') {
-            $request->session()->forget('pending_login');
-
-            return redirect()->route('login')->withErrors([
-                'identity' => 'Please sign in again to request a verification code.',
-            ]);
-        }
-
-        return view('auth.verify', [
-            'user' => $user,
-            'purpose' => 'login',
-            'email' => $user->email,
-        ]);
-    }
-
-    /** Verify the login code and then create the authenticated session. */
-    public function verifyLoginOtp(Request $request, EmailOtpService $emailOtpService)
-    {
-        $data = $request->validate(['otp' => ['required', 'digits:6']]);
-        $pending = $request->session()->get('pending_login');
-        $user = $pending ? User::find($pending['user_id']) : null;
-
-        if (! $user || ! $user->is_active || $user->status === 'deactivated') {
-            $request->session()->forget('pending_login');
-
-            return redirect()->route('login')->withErrors([
-                'identity' => 'Your sign-in session expired. Please sign in again.',
-            ]);
-        }
-
-        if (! $emailOtpService->verify($user->email, 'login', $data['otp'])) {
-            return back()->withErrors([
-                'otp' => 'The code is incorrect or expired. You can request a new code below.',
-            ]);
-        }
+        $request->session()->forget(['staff_verification_user_id', 'password_reset']);
+        $request->session()->regenerate();
 
         $user->forceFill(['last_login_at' => now()])->save();
-        Auth::login($user, (bool) ($pending['remember'] ?? false));
-        $request->session()->forget(['pending_login', 'verification_user_id']);
+        Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        AuditLogger::activity('Signed in', 'Password and email code', $user);
+        AuditLogger::activity('Signed in', 'Password', $user);
+
+        if ($user->must_change_password) {
+            return redirect()->route('password.force');
+        }
 
         return $this->redirectToOwnArea($request, $user);
     }
 
-    /** Send another login code if the resend cooldown has passed. */
-    public function resendLoginOtp(Request $request, EmailOtpService $emailOtpService)
+    /** Citizen · 02 Required password change screen. */
+    public function showForcePasswordChange(Request $request)
     {
-        $pending = $request->session()->get('pending_login');
-        $user = $pending ? User::find($pending['user_id']) : null;
+        $user = $request->user();
+        if (! $user->must_change_password) {
+            return redirect()->route($user->homeRoute());
+        }
 
-        if (! $user || ! $user->is_active || $user->status === 'deactivated') {
-            $request->session()->forget('pending_login');
+        return view('auth.force-password', ['user' => $user]);
+    }
 
-            return redirect()->route('login')->withErrors([
-                'identity' => 'Please sign in again to request a verification code.',
+    /** Citizen · 02 Save new permanent password. */
+    public function updateForcePasswordChange(Request $request)
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'password' => ['required', 'confirmed', Password::min(8)],
+        ], [
+            'password.min' => 'Use at least 8 characters.',
+            'password.confirmed' => 'The two passwords do not match.',
+        ]);
+
+        if (Hash::check($data['password'], $user->password)) {
+            return back()->withErrors([
+                'password' => 'Choose a password different from your temporary one.',
             ]);
         }
 
-        try {
-            $emailOtpService->send($user->email, 'login');
-        } catch (ValidationException $exception) {
-            return back()->withErrors($exception->errors());
-        }
+        $user->forceFill([
+            'password' => Hash::make($data['password']),
+            'must_change_password' => false,
+            'password_changed_at' => now(),
+        ])->save();
 
-        return back()->with('status', 'A new verification code has been sent to your email.');
+        AuditLogger::security('Password changed', 'Required temporary password replacement', $user);
+
+        return redirect()
+            ->route($user->homeRoute())
+            ->with('status', 'Your new password has been saved.');
     }
 
-    /** Sign the person out and go back to the login page. */
     public function logout(Request $request)
     {
-        AuditLogger::activity('Signed out', 'Account security');
+        if (Auth::check()) {
+            AuditLogger::activity('Signed out', 'Account security');
+        }
 
         Auth::logout();
         $request->session()->invalidate();
@@ -209,7 +128,6 @@ class AuthController extends Controller
         return redirect()->route('login');
     }
 
-    /** Send each account to its own section and only honor intended links inside that section. */
     private function redirectToOwnArea(Request $request, User $user)
     {
         $intended = $request->session()->pull('url.intended');

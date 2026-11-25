@@ -28,28 +28,27 @@
       <a class="nav-link {{ request()->routeIs('concerns.ordinance*') ? 'active' : '' }}" href="{{ route('concerns.ordinances') }}">Ordinances</a>
       <a class="nav-link {{ request()->routeIs('concerns.status*') ? 'active' : '' }}" href="{{ route('concerns.status') }}">Track a concern</a>
     </nav>
-
-    @if(auth()->check())
-      <div class="whoami">
-        <div class="whoami-name">{{ auth()->user()->name }}</div>
-        <div class="muted small">Citizen</div>
-        <form method="POST" action="{{ route('logout') }}">
-          @csrf
-          <button class="link-btn" type="submit">Sign out</button>
-        </form>
-      </div>
-    @endif
   </aside>
 
   <div class="main-wrap">
     <header class="topbar">
       <div class="crumbs">Victoria / Citizen / <b>@yield('crumb', 'Dashboard')</b></div>
       @auth
-      <a class="notification-bell" href="{{ route('notifications.index') }}" aria-label="Notifications">
-        Bell
-        @php($unread = auth()->user()->notifications()->whereNull('read_at')->count())
-        @if($unread)<span class="notification-count">{{ $unread > 99 ? '99+' : $unread }}</span>@endif
-      </a>
+      <div class="topbar-actions">
+        @include('partials.notification-menu')
+        <button class="account-menu-btn" id="citizenAccountBtn" type="button" aria-expanded="false" aria-controls="citizenAccountMenu" aria-label="Open account menu">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </button>
+        <div class="account-menu" id="citizenAccountMenu" hidden>
+          <div class="account-menu-name">{{ auth()->user()->name }}</div>
+          <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit">Sign out</button>
+          </form>
+        </div>
+      </div>
       @endauth
     </header>
 
@@ -60,6 +59,31 @@
   </div>
 </div>
 @stack('scripts')
+<script>
+(function(){
+ const button=document.getElementById("citizenAccountBtn");
+ const menu=document.getElementById("citizenAccountMenu");
+ if(!button||!menu)return;
+ function closeMenu(){
+  menu.hidden=true;
+  button.setAttribute("aria-expanded","false");
+ }
+ button.addEventListener("click",()=>{
+  const opening=menu.hidden;
+  menu.hidden=!opening;
+  button.setAttribute("aria-expanded",opening?"true":"false");
+ });
+ document.addEventListener("click",event=>{
+  if(!event.target.closest(".topbar-actions"))closeMenu();
+ });
+ document.addEventListener("keydown",event=>{
+  if(event.key==="Escape"&&!menu.hidden){
+   closeMenu();
+   button.focus();
+  }
+ });
+})();
+</script>
 <script>
 (function(){
  const button=document.getElementById("citizenMenuBtn");

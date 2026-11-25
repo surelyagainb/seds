@@ -14,12 +14,12 @@ class EnsureAccountActive
     {
         $user = $request->user();
 
-        if ($user && ! $user->is_active) {
+        if ($user && ($user->status !== 'active' || ! $user->is_active)) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('login')->withErrors(['email' => 'This account has been deactivated.']);
+            return redirect()->route('login')->withErrors(['email' => 'This account is not active. Please contact the Municipal Hall.']);
         }
 
         return $next($request);

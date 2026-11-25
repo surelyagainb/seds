@@ -36,7 +36,7 @@ body {
   color: var(--ink);
   font-size: 14px;
   line-height: 1.45;
-  zoom: 1.25
+  zoom: 1.00
 }
 
 a {
@@ -53,8 +53,10 @@ a {
 .sidebar {
   width: 228px;
   flex: none;
-  position: sticky;
+  position: fixed;
+  left: 0;
   top: 0;
+  bottom: 0;
   height: 100vh;
   overflow-y: auto;
   background: #0E2454;
@@ -134,9 +136,7 @@ a {
 }
 
 .whoami {
-  margin-top: auto;
-  padding: 12px 16px 0;
-  border-top: 1px solid rgba(255, 255, 255, .2)
+  display: none
 }
 
 .whoami-name {
@@ -173,7 +173,8 @@ a {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column
+  flex-direction: column;
+  margin-left: 228px
 }
 
 .topbar {
@@ -183,6 +184,74 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between
+}
+
+.topbar-actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px
+}
+
+.notification-bell {
+  display: inline-grid;
+  place-items: center;
+  position: relative
+}
+
+.account-menu-btn {
+  width: 38px;
+  height: 38px;
+  display: inline-grid;
+  place-content: center;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer
+}
+
+.account-menu-btn span {
+  display: block;
+  width: 16px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor
+}
+
+.account-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: 220px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(20, 24, 40, .16);
+  z-index: 50
+}
+
+.account-menu-name {
+  font-weight: 700;
+  color: var(--ink);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line)
+}
+
+.account-menu form {
+  margin: 8px 0 0
+}
+
+.account-menu form button {
+  border: 0;
+  background: transparent;
+  color: var(--navy);
+  padding: 6px 0;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer
 }
 
 .crumbs {
@@ -1194,6 +1263,128 @@ footer {
   text-decoration: underline
 }
 
+/* Ordinance detail document */
+.ordinance-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid #dfe3ea;
+  border-radius: 9px;
+  background: #fff;
+  color: #536f9d;
+  font-size: 15px;
+  font-weight: 700
+}
+
+.ordinance-back:hover {
+  text-decoration: none;
+  background: #f8fafc
+}
+
+.ordinance-document {
+  background: #fff;
+  border: 1px solid #e1e5eb;
+  border-radius: 12px;
+  padding: 38px 40px 34px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .03)
+}
+
+.ordinance-heading {
+  margin-bottom: 22px
+}
+
+.ordinance-heading h1 {
+  margin: 0 0 4px;
+  color: #182033;
+  font-size: clamp(32px, 4vw, 42px);
+  line-height: 1.12;
+  letter-spacing: -.035em
+}
+
+.ordinance-heading p {
+  margin: 0;
+  color: #182033;
+  font-size: 20px;
+  font-weight: 700
+}
+
+.ordinance-demo-notice {
+  margin: 0 0 28px;
+  padding: 18px 20px;
+  border-left: 4px solid #2f4f91;
+  border-radius: 9px;
+  background: #edf2f8;
+  color: #3d4b62;
+  font-size: 14px
+}
+
+.ordinance-sections {
+  display: grid;
+  gap: 26px
+}
+
+.ordinance-sections h2 {
+  margin: 0 0 9px;
+  color: #182033;
+  font-size: 20px;
+  font-weight: 800
+}
+
+.ordinance-sections p {
+  margin: 0;
+  color: #46546d;
+  font-size: 16px;
+  line-height: 1.65
+}
+
+.ordinance-download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 32px;
+  padding: 13px 18px;
+  border-radius: 7px;
+  background: #1f5fa8;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700
+}
+
+.ordinance-download:hover {
+  background: #184f8d;
+  text-decoration: none
+}
+
+@media (max-width: 700px) {
+  .ordinance-document {
+    padding: 24px 20px 22px
+  }
+
+  .ordinance-heading h1 {
+    font-size: 28px
+  }
+
+  .ordinance-heading p {
+    font-size: 17px
+  }
+
+  .ordinance-demo-notice {
+    padding: 14px 16px
+  }
+
+  .ordinance-sections h2 {
+    font-size: 18px
+  }
+
+  .ordinance-sections p {
+    font-size: 15px
+  }
+}
+
 /* Search and Filters */
 .filters {
   display: grid;
@@ -1254,13 +1445,15 @@ footer {
     background: #fff;
     color: var(--ink);
     position: absolute;
-    right: 16px;
+    right: auto;
+    left: 16px;
     top: 8px;
     z-index: 30
   }
 
   .topbar {
-    padding-right: 64px
+    padding-right: 16px;
+    padding-left: 64px
   }
 
   .sidebar {
@@ -1282,6 +1475,10 @@ footer {
 @media (max-width:820px) {
   .shell {
     flex-direction: column
+  }
+
+  .main-wrap {
+    margin-left: 0
   }
 
   .sidebar {

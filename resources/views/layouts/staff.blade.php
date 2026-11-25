@@ -46,24 +46,21 @@
       </div>
     @endif
 
-    <div class="whoami">
-      <div class="whoami-name">{{ $u->name }}</div>
-      <div class="muted small">{{ method_exists($u, 'roleLabel') ? $u->roleLabel() : 'SB Staff' }}</div>
-      <form method="POST" action="{{ route('logout') }}">
-        @csrf
-        <button class="link-btn" type="submit">Sign out</button>
-      </form>
-    </div>
   </aside>
 
   <div class="content">
     <header class="topbar">
       <div><button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar">☰</button>Victoria / Staff / <b>@yield('crumb')</b></div>
-      <a class="notification-bell" href="{{ route('notifications.index') }}" aria-label="Notifications">
-        Bell
-        @php($unread = $u->notifications()->whereNull('read_at')->count())
-        @if($unread)<span class="notification-count">{{ $unread > 99 ? '99+' : $unread }}</span>@endif
-      </a>
+      <div class="topbar-actions">
+        @include('partials.notification-menu')
+        <details class="account-menu-wrap">
+          <summary class="account-menu-btn" aria-label="Open account menu"><span></span><span></span><span></span></summary>
+          <div class="account-menu">
+            <div class="account-menu-name">{{ $u->name }}</div>
+            <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit">Sign out</button></form>
+          </div>
+        </details>
+      </div>
     </header>
 
     <main class="page" id="main-content">

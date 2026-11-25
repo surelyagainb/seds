@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\AuditLog;
 use App\Services\AuditLogger;
+use App\Support\TemporaryPasswordGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -24,7 +25,7 @@ class MemberController extends Controller
             'assigned_categories' => ['array'],
             'assigned_categories.*' => [Rule::in(array_keys(config('concerns.categories'))) ],
         ]);
-        $temporary = 'Victoria'.random_int(100,999).'!';
+        $temporary = TemporaryPasswordGenerator::generate();
         $member = User::create([
             'name' => $data['name'],
             'username' => $data['username'],
@@ -87,7 +88,7 @@ class MemberController extends Controller
         $request->validate([
             'confirm_reset' => ['required','accepted'],
         ], ['confirm_reset.accepted'=>'Confirm the password reset before continuing.']);
-        $temporary = 'Victoria'.random_int(100,999).'!';
+        $temporary = TemporaryPasswordGenerator::generate();
         $member->forceFill([
             'password' => Hash::make($temporary),
             'password_changed_at' => now(),

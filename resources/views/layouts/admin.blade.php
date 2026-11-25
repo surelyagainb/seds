@@ -39,22 +39,20 @@
             @endif
         </nav>
 
-        <div class="whoami">
-            <div class="whoami-name">{{ $u->name }}</div>
-            <div class="muted small">{{ $u->roleLabel() }}</div>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button class="link-btn" type="submit">Sign out</button>
-            </form>
-        </div>
     </aside>
 
     <main class="main" id="main-content">
         <div class="card-head"><div class="crumbs">Workspace &nbsp;/&nbsp; Settings</div>
-            <a class="notification-bell" href="{{ route('notifications.index') }}" aria-label="Notifications">Bell
-                @php($unread = $u->notifications()->whereNull('read_at')->count())
-                @if($unread)<span class="notification-count">{{ $unread > 99 ? '99+' : $unread }}</span>@endif
-            </a>
+            <div class="topbar-actions">
+                @include('partials.notification-menu')
+                <details class="account-menu-wrap">
+                    <summary class="account-menu-btn" aria-label="Open account menu"><span></span><span></span><span></span></summary>
+                    <div class="account-menu">
+                        <div class="account-menu-name">{{ $u->name }}</div>
+                        <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit">Sign out</button></form>
+                    </div>
+                </details>
+            </div>
         </div>
         <h1>@yield('heading')</h1>
         <p class="lead">@yield('lead')</p>

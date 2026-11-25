@@ -129,26 +129,29 @@
   });
 
   document.querySelectorAll("form").forEach(form=>{
-    form.querySelectorAll("input[required],select[required],textarea[required]").forEach(field=>{
-      field.addEventListener("blur",()=>{
-        if(field.checkValidity())return;
-        const message=field.validationMessage||"This field is required.";
-        let error=field.parentElement?.querySelector("[data-field-error]");
-        if(!error){
-          error=document.createElement("div");
-          error.className="error show";
-          error.setAttribute("role","alert");
-          error.dataset.fieldError="1";
-          field.insertAdjacentElement("afterend",error);
-        }
-        error.textContent=message;
-        window.UI.announce(message);
+    const serverValidation=form.hasAttribute("data-server-validation");
+    if(!serverValidation){
+      form.querySelectorAll("input[required],select[required],textarea[required]").forEach(field=>{
+        field.addEventListener("blur",()=>{
+          if(field.checkValidity())return;
+          const message=field.validationMessage||"This field is required.";
+          let error=field.parentElement?.querySelector("[data-field-error]");
+          if(!error){
+            error=document.createElement("div");
+            error.className="error show";
+            error.setAttribute("role","alert");
+            error.dataset.fieldError="1";
+            field.insertAdjacentElement("afterend",error);
+          }
+          error.textContent=message;
+          window.UI.announce(message);
+        });
+        field.addEventListener("input",()=>{
+          const error=field.parentElement?.querySelector("[data-field-error]");
+          if(field.checkValidity()&&error)error.remove();
+        });
       });
-      field.addEventListener("input",()=>{
-        const error=field.parentElement?.querySelector("[data-field-error]");
-        if(field.checkValidity()&&error)error.remove();
-      });
-    });
+    }
     form.addEventListener("submit",event=>{
       const button=form.querySelector('[type="submit"]:not([data-no-loading])');
       if(!button||button.dataset.loading==="1")return;
@@ -156,7 +159,7 @@
       const restore=window.UI.loadingButton(button);
       setTimeout(()=>{
         restore();
-        if(form.checkValidity()){HTMLFormElement.prototype.submit.call(form);}
+        if(serverValidation||form.checkValidity()){HTMLFormElement.prototype.submit.call(form);}
         else form.reportValidity();
       },600);
     });

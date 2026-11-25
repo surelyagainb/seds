@@ -59,7 +59,7 @@
 @push('modals')
 {{-- New ordinance pop-up (reopens by itself if something was not accepted) --}}
 <div class="modal-back {{ $errors->hasAny(['number', 'title', 'category', 'status', 'keywords', 'text']) ? 'open' : '' }}" id="newOrd" role="dialog" aria-modal="true" aria-labelledby="nTitle">
-  <form class="modal" method="POST" action="{{ route('staff.ordinances.store') }}">
+  <form class="modal" method="POST" action="{{ route('staff.ordinances.store') }}" enctype="multipart/form-data">
     @csrf
     <div class="modal-head"><h2 id="nTitle">New ordinance</h2><button type="button" data-close aria-label="Close">×</button></div>
     <label for="nNo">Ordinance number *</label><input type="text" id="nNo" name="number" value="{{ old('number') }}" maxlength="40" placeholder="e.g. Ordinance No. 2026-003">
@@ -70,6 +70,7 @@
     <select id="nStatus" name="status">@foreach(\App\Models\Ordinance::STATUSES as $s)<option @selected(old('status') === $s)>{{ $s }}</option>@endforeach</select>
     <label for="nKw">Keywords *</label><input type="text" id="nKw" name="keywords" value="{{ old('keywords') }}" maxlength="500" placeholder="Separate with commas, e.g. noise, karaoke, loud">
     <label for="nText">Main text</label><textarea id="nText" name="text" maxlength="10000" placeholder="Paste the main section of the ordinance">{{ old('text') }}</textarea>
+    <label for="nFile">Ordinance PDF</label><input type="file" id="nFile" name="file" accept=".pdf,application/pdf">
     <div class="modal-actions">
       <button class="btn" type="button" data-close>Cancel</button>
       <button class="btn primary" type="submit">Save ordinance</button>

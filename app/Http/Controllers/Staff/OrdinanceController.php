@@ -8,6 +8,7 @@ use App\Models\Ordinance;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 /** The ordinance register: list, add a new ordinance, and view one. */
 class OrdinanceController extends Controller
@@ -46,6 +47,7 @@ class OrdinanceController extends Controller
             'status'   => ['required', Rule::in(Ordinance::STATUSES)],
             'keywords' => ['required', 'string', 'max:500'],
             'text'     => ['nullable', 'string', 'max:10000'],
+            'file'     => ['nullable', 'file', 'mimes:pdf', 'max:20480'],
         ], [
             'number.required'   => 'Please fill in the ordinance number.',
             'number.unique'     => 'An ordinance with this number already exists.',
@@ -61,6 +63,14 @@ class OrdinanceController extends Controller
             return back()->withInput()->withErrors(['keywords' => 'Please add at least one keyword (letters and numbers only).']);
         }
 
+        $filePath = null;
+        $fileName = null;
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $fileName = $file->getClientOriginalName();
+            $filePath = $file->store('ordinance-files', 'local');
+        }
+
         $ordinance = Ordinance::create([
             'number'   => $data['number'],
             'title'    => $data['title'],
@@ -69,6 +79,8 @@ class OrdinanceController extends Controller
             'version'  => 'v1',
             'keywords' => $keywords,
             'sections' => [['n' => 1, 'title' => 'Main provisions', 'text' => trim($data['text'] ?? '') ?: 'No text added yet.']],
+            'file_path' => $filePath,
+            'file_name' => $fileName,
         ]);
 
         AuditLogger::activity('Ordinance added', $ordinance->number.' · '.$ordinance->title);

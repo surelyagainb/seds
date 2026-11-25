@@ -18,14 +18,14 @@ class CreateSbMember extends Command
     /** Ask for a password if none was given, check everything, then save the account. */
     public function handle(): int
     {
-        $password = $this->option('password') ?: $this->secret('Password (12+ characters, with letters, numbers and a symbol)');
+        $password = $this->option('password') ?: $this->secret('Password (8+ characters, with letters, numbers and a symbol)');
 
         $v = Validator::make(
             ['name' => $this->argument('name'), 'email' => $this->argument('email'), 'password' => $password],
             [
                 'name'     => ['required', 'string', 'max:120'],
                 'email'    => ['required', 'email', 'max:190', 'unique:users,email'],
-                'password' => ['required', Password::min(12)->letters()->numbers()->symbols()],
+                'password' => ['required', Password::min(8)->letters()->numbers()->symbols()],
             ]
         );
 
@@ -36,7 +36,12 @@ class CreateSbMember extends Command
         }
 
         $user = new User(['name' => $this->argument('name'), 'email' => $this->argument('email'), 'password' => $password]);
-        $user->forceFill(['role' => 'sb_member', 'is_active' => true, 'password_changed_at' => now()])->save();
+        $user->forceFill([
+            'role' => 'sb_member',
+            'is_active' => true,
+            'verified_at' => now(),
+            'password_changed_at' => now(),
+        ])->save();
 
         AuditLogger::security('SB member account created', $user->name.' · '.$user->email);
 

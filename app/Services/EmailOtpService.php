@@ -9,17 +9,17 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
-/** Creates, sends, and checks one-time email codes for login and registration. */
+/** Creates, sends, and checks one-time email codes for staff verification and password reset. */
 class EmailOtpService
 {
-    private const CODE_MINUTES = 5;
+    private const CODE_MINUTES = 10;
     private const RESEND_SECONDS = 60;
     private const MAX_ATTEMPTS = 5;
 
     /** Generate and email a new six-digit code. */
     public function send(string $email, string $purpose): void
     {
-        if (! in_array($purpose, ['login', 'registration'], true)) {
+        if (! in_array($purpose, ['citizen_registration', 'staff_registration', 'password_reset'], true)) {
             throw ValidationException::withMessages([
                 'otp' => 'The verification request is invalid. Please try again.',
             ]);
@@ -52,18 +52,40 @@ class EmailOtpService
                 'code' => $code,
                 'minutes' => self::CODE_MINUTES,
                 'purpose' => $purpose,
-            ], function ($message) use ($email) {
-                $message->to($email)->subject('Your Victoria verification code');
+            ], function ($message) use ($email, $purpose) {
+                $subject = $purpose === 'password_reset'
+                    ? 'Your Victoria password reset code'
+                    : 'Your Victoria account verification code';
+                $message->to($email)->subject($subject);
             });
         } catch (Throwable $exception) {
             $otp->delete();
-            report($exception);   // the full technical error is written to storage/logs/laravel.log
+            report($exception);
 
             throw ValidationException::withMessages(['otp' => self::explain($exception)]);
         }
     }
 
-    /** Stop early, with a clear message, when the mail settings in .env are missing or still the examples. */
+    /** Send a newly created citizen temporary password by email. */
+    public function sendTemporaryPassword(string $email, string $name, string $temporaryPassword): void
+    {
+        $this->assertMailIsSetUp();
+
+        try {
+            Mail::send('emails.temporary-password', [
+                'name' => $name,
+                'email' => $email,
+                'temporaryPassword' => $temporaryPassword,
+            ], function ($message) use ($email) {
+                $message->to($email)->subject('Your Victoria Citizen Account Temporary Password');
+            });
+        } catch (Throwable $exception) {
+            report($exception);
+
+            throw ValidationException::withMessages(['email' => self::explain($exception)]);
+        }
+    }
+
     private function assertMailIsSetUp(): void
     {
         $default = config('mail.default');
@@ -84,7 +106,6 @@ class EmailOtpService
         }
     }
 
-    /** Throw the message as a validation error. In production only a short, safe message is shown. */
     private function fail(string $debugMessage): never
     {
         throw ValidationException::withMessages([
@@ -92,11 +113,6 @@ class EmailOtpService
         ]);
     }
 
-    /**
-     * Turn a mail error into a message a person can act on.
-     * While APP_DEBUG=true the message says what to fix (and shows the technical detail).
-     * In production a short, safe message is shown and the details stay in the log.
-     */
     public static function explain(Throwable $exception): string
     {
         if (! config('app.debug')) {
@@ -128,7 +144,6 @@ class EmailOtpService
         return 'We could not send the verification email. '.$hint.' [Technical detail: '.Str::limit($exception->getMessage(), 300).']';
     }
 
-    /** Check a code. It expires after five minutes and allows five incorrect attempts. */
     public function verify(string $email, string $purpose, string $code): bool
     {
         $otp = EmailOtp::where('email', $email)
