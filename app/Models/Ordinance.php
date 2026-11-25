@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Services\OrdinanceMatcher;
 use Illuminate\Database\Eloquent\Model;
 
 /** An ordinance that can be suggested for a concern.
@@ -46,21 +45,42 @@ class Ordinance extends Model
         };
     }
 
-    /** The section whose text shares the most keywords with the concern (first section if none). */
-    public function bestSection(array $hits): ?array
+    /**
+     * Pick the ordinance section that mentions the most matched keywords.
+     * Falls back to the first section if no keywords match any section text.
+     */
+    public function bestSection(array $matchedKeywords): ?array
     {
         $sections = $this->sections ?: [];
-        $best = $sections[0] ?? null;
-        $top  = -1;
 
-        foreach ($sections as $s) {
-            $score = 0;
-            foreach ($hits as $h) {
-                if ($h !== '' && preg_match('/\b'.preg_quote($h, '/').'/iu', $s['text'] ?? '')) $score++;
-            }
-            if ($score > $top) { $top = $score; $best = $s; }
+        if (empty($sections)) {
+            return null;
         }
 
-        return $best;
+        $bestSection = $sections[0];
+        $highestHitCount = -1;
+
+        foreach ($sections as $section) {
+            $sectionText = $section['text'] ?? '';
+            $hitCount = 0;
+
+            foreach ($matchedKeywords as $keyword) {
+                if ($keyword === '') {
+                    continue;
+                }
+
+                // Count how many of the concern's matched keywords appear in this section
+                if (preg_match('/\b' . preg_quote($keyword, '/') . '/iu', $sectionText) === 1) {
+                    $hitCount++;
+                }
+            }
+
+            if ($hitCount > $highestHitCount) {
+                $highestHitCount = $hitCount;
+                $bestSection = $section;
+            }
+        }
+
+        return $bestSection;
     }
 }

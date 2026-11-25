@@ -15,12 +15,21 @@ class ConcernMatch extends Model
         return ['reasons' => 'array'];
     }
 
-    /** The score as a percentage of the best possible score (shown as a bar for SB members). */
+    /**
+     * Convert the raw score into a 0-100% value for the staff progress bar,
+     * based on the maximum possible score (category points + keyword cap).
+     */
     public function getPercentAttribute(): int
     {
-        $max = config('matching.category_points') + config('matching.keyword_cap');
+        $maxPossibleScore = config('matching.category_points') + config('matching.keyword_cap');
 
-        return (int) min(100, round($this->score / max(1, $max) * 100));
+        if ($maxPossibleScore <= 0) {
+            return 0;
+        }
+
+        $percentage = round(($this->score / $maxPossibleScore) * 100);
+
+        return (int) min(100, $percentage);
     }
 
     /** The concern this suggestion is for. */
