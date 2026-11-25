@@ -2,8 +2,8 @@
 /node_modules
 .env
 .env.backup
+/vendor/
 
-<<<<<<< HEAD
 # Generated files (they differ on every computer, so they must not be shared)
 /storage/*.key
 /storage/logs/*
@@ -12,12 +12,10 @@
 !/storage/framework/cache/data/.gitkeep
 /storage/framework/sessions/*
 !/storage/framework/sessions/.gitkeep
-/storage/framework/views/*
+/storage/framework/views/*  
 !/storage/framework/views/.gitkeep
 /bootstrap/cache/*
 !/bootstrap/cache/.gitkeep
 # Uploaded photos from testing
 /storage/app/private/*
 !/storage/app/private/.gitkeep
-=======
->>>>>>> da7f13caea06a12e0fc3b88108ca9b77735219be
